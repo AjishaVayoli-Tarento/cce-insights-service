@@ -3,9 +3,9 @@
 **Epic:** CCE Insights Service — Compliance Analytics & Dashboards  
 **Component:** `cce-insights-service`  
 **Sprint Target:** Release 1.0.0  
-**Total Subtasks:** 13  
-**Total Story Points:** 53  
-**Total Endpoints:** 26  
+**Total Subtasks:** 15  
+**Total Story Points:** 63  
+**Total Endpoints:** 33  
 
 > Each subtask is a single PR-able unit. Execute in listed order — each depends on the prior one being merged. Subtasks S4–S9 can be parallelized after S3 is merged.
 
@@ -167,7 +167,7 @@ Implement the compliance summary endpoints — protocol adherence rates, facilit
 
 ---
 
-## Subtask S5: Patient Compliance Service & Endpoints (3 endpoints)
+## Subtask S5: Patient Compliance Service & Endpoints (5 endpoints)
 
 **Type:** Story  
 **Priority:** High  
@@ -175,13 +175,15 @@ Implement the compliance summary endpoints — protocol adherence rates, facilit
 **Labels:** `feature`, `api`
 
 **Description:**  
-Implement patient-level compliance endpoints — timeline view, protocol tracking list, and detailed step-by-step tracking for a single protocol instance.
+Implement patient-level compliance endpoints — timeline view, protocol tracking list, detailed step-by-step tracking, patient event history, and patient deviation history.
 
 **Acceptance Criteria:**
 - [ ] `PatientTimelineService` — timeline assembly combining events and step status changes, per-protocol step progression
 - [ ] `GET /v1/patients/{patientId}/compliance-timeline` — chronological timeline across all enrolled protocols with event history and step status
 - [ ] `GET /v1/patients/{patientId}/protocol-tracking` — list all protocol instances for a patient with compliance rates
 - [ ] `GET /v1/patients/{patientId}/protocol-tracking/{protocolInstanceId}` — detailed step-by-step tracking with deviations for a single protocol
+- [ ] `GET /v1/patients/{patientId}/events` — patient event history from event_log with resource type, source, and date filtering
+- [ ] `GET /v1/patients/{patientId}/deviations` — patient deviation history across all protocol instances with type and date filtering
 - [ ] DTOs: `PatientTimelineDto`, `PatientComplianceDto`
 - [ ] Unit tests for timeline ordering, empty results, multi-protocol scenarios
 - [ ] MockMvc tests for each endpoint: 200 OK, 404 patient not found
@@ -221,7 +223,7 @@ Implement the core deviation endpoints — paginated list, time-bucketed trends,
 
 ---
 
-## Subtask S7: Event Volume & Activity Metrics (6 endpoints)
+## Subtask S7: Event Volume & Activity Metrics (8 endpoints)
 
 **Type:** Story  
 **Priority:** High  
@@ -238,7 +240,8 @@ Implement event volume analytics — aggregate counts of clinical events grouped
 - [ ] `GET /v1/events/by-resource-type` — event counts grouped by `data->>'resourceType'` with percentages
 - [ ] `GET /v1/events/by-facility` — event counts per facility with resource type sub-groups, cursor pagination
 - [ ] `GET /v1/events/by-practitioner` — event counts per practitioner via JSONB COALESCE extraction, cursor pagination. Practitioner `display` field is best-effort.
-- [ ] `GET /v1/events/by-source` — event counts per source system with resource type sub-groups
+- [ ] `GET /v1/events/by-source` — event counts per source system with status breakdown (uses inbound_event)
+- [ ] `GET /v1/events/compare-sources` — compare two source systems: overlap, unique events, sample pairs (uses inbound_event)
 - [ ] DTOs: `EventVolumeSummaryDto`, `EventVolumeTrendDto`, `ResourceTypeCountDto`, `FacilityEventCountDto`, `PractitionerEventCountDto`, `SourceSystemCountDto`
 - [ ] Unit tests for JSONB path extraction logic, percentage calculation, null practitioner handling
 - [ ] MockMvc tests for all 6 endpoints: 200 OK, filters, pagination
@@ -429,6 +432,81 @@ Full integration test suite using Testcontainers PostgreSQL. Seed compliance sch
 
 ---
 
+## Subtask S14: Ingestion Analytics (inbound_event Integration) — 4 endpoints
+
+**Type:** Story  
+**Priority:** High  
+**Story Points:** 5  
+**Labels:** `feature`, `api`, `ingestion-analytics`
+
+**Description:**  
+Implement ingestion pipeline analytics by querying the `inbound_event` table (owned by the Collector Service). Provides acceptance/rejection funnels, rejection reason analysis, source data quality scores, and pipeline loss tracking (accepted events vs compliance-matched). Also migrates source-level event counts and source comparison to `inbound_event` for complete event visibility.
+
+**Acceptance Criteria:**
+- [ ] `InboundEvent` entity — maps `inbound_event` table, `@Immutable`, 16 columns including `status`, `rejection_reason`, `error_details`, `raw_payload` (JSONB)
+- [ ] `InboundEventRepository` — 12 native SQL queries for status counts, rejection analysis, source quality, trends, overlap detection, and pipeline loss
+- [ ] `IngestionAnalyticsService` — ingestion funnel, rejection analytics, source data quality, pipeline loss
+- [ ] `GET /v1/ingestion/funnel` — acceptance/rejection/duplicate rates with optional interval-based trends
+- [ ] `GET /v1/ingestion/rejections` — rejection reason breakdown, per-source rejection rates with top reasons
+- [ ] `GET /v1/ingestion/source-quality` — per-source quality scores (acceptance/rejection/duplicate rates)
+- [ ] `GET /v1/ingestion/pipeline-loss` — accepted events vs compliance-matched, loss rate per source
+- [ ] DTOs: `IngestionFunnelDto`, `RejectionAnalyticsDto`, `SourceDataQualityDto`, `PipelineLossDto`
+- [ ] Migration: `EventVolumeService.getBySource()` and `compareSourceSystems()` now use `InboundEventRepository`
+- [ ] `init-schema.sql` updated with `inbound_event` DDL
+- [ ] `seed-data.sql` updated with sample inbound_event rows
+- [ ] `IngestionAnalyticsControllerIT` integration tests
+
+**Files:**
+- `src/main/java/org/openphc/cce/insights/domain/entity/InboundEvent.java`
+- `src/main/java/org/openphc/cce/insights/domain/repository/InboundEventRepository.java`
+- `src/main/java/org/openphc/cce/insights/service/IngestionAnalyticsService.java`
+- `src/main/java/org/openphc/cce/insights/web/controller/IngestionAnalyticsController.java`
+- `src/main/java/org/openphc/cce/insights/web/dto/IngestionFunnelDto.java`
+- `src/main/java/org/openphc/cce/insights/web/dto/RejectionAnalyticsDto.java`
+- `src/main/java/org/openphc/cce/insights/web/dto/SourceDataQualityDto.java`
+- `src/main/java/org/openphc/cce/insights/web/dto/PipelineLossDto.java`
+
+---
+
+## Subtask S15: Deployment & Containerization
+
+**Type:** Task  
+**Priority:** Medium  
+**Story Points:** 5  
+**Labels:** `infrastructure`, `deployment`, `documentation`
+
+**Description:**  
+Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deployment guide (Docker, Kubernetes, bare-metal), release notes, and supporting files (.dockerignore, .env.example). Perform code optimization and synchronize all documentation to the final 33-endpoint codebase state.
+
+**Acceptance Criteria:**
+- [ ] `Dockerfile` — multi-stage build (eclipse-temurin:21-jdk-alpine → jre-alpine), non-root user, health check, JVM tuning
+- [ ] `docker-compose.yml` — PostgreSQL 16 + insights-service with health checks and environment configuration
+- [ ] `.dockerignore` — exclude build artifacts, IDE files, docs
+- [ ] `.env.example` — document all environment variables with defaults
+- [ ] `docs/deployment-guide.md` — Docker Compose, standalone Docker, Kubernetes (ConfigMap + Secret + Deployment + Service), bare-metal, systemd, monitoring, scaling
+- [ ] `RELEASE_NOTES.md` — v1.0.0 release with full endpoint inventory, architecture summary, bug fixes, known limitations
+- [ ] `README.md` — rewritten with project overview, quick start, endpoint summary, configuration, project structure
+- [ ] Code optimization: extract `DateUtil` utility, fix `FacilityRankingService` deviation count bug, add missing `logstash-logback-encoder` dependency
+- [ ] All `.md` files updated to reflect 33 endpoints, 6 entities, 10 services, 10 controllers, InboundEvent/IngestionAnalytics additions
+
+**Files:**
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+- `.env.example`
+- `RELEASE_NOTES.md`
+- `README.md`
+- `docs/deployment-guide.md`
+- `docs/architecture-overview.md` (updated)
+- `docs/developer-setup.md` (updated)
+- `docs/flow-diagrams.md` (updated)
+- `artifacts/subtasks.md` (updated)
+- `build.gradle` (logstash-logback-encoder added)
+- `src/main/java/org/openphc/cce/insights/service/DateUtil.java` (new)
+- `src/main/java/org/openphc/cce/insights/service/FacilityRankingService.java` (bug fix)
+
+---
+
 ## Endpoint-to-Subtask Mapping
 
 | # | Endpoint | Subtask |
@@ -439,26 +517,33 @@ Full integration test suite using Testcontainers PostgreSQL. Seed compliance sch
 | 4 | `GET /v1/patients/{id}/compliance-timeline` | S5 |
 | 5 | `GET /v1/patients/{id}/protocol-tracking` | S5 |
 | 6 | `GET /v1/patients/{id}/protocol-tracking/{piId}` | S5 |
-| 7 | `GET /v1/deviations` | S6 |
-| 8 | `GET /v1/deviations/trends` | S6 |
-| 9 | `GET /v1/intelligence/summary` | S6 |
-| 10 | `GET /v1/events/summary` | S7 |
-| 11 | `GET /v1/events/trends` | S7 |
-| 12 | `GET /v1/events/by-resource-type` | S7 |
-| 13 | `GET /v1/events/by-facility` | S7 |
-| 14 | `GET /v1/events/by-practitioner` | S7 |
-| 15 | `GET /v1/events/by-source` | S7 |
-| 16 | `GET /v1/protocols/{id}/step-analytics` | S8 |
-| 17 | `GET /v1/protocols/{id}/completion-funnel` | S8 |
-| 18 | `GET /v1/protocols/{id}/outcome-distribution` | S8 |
-| 19 | `GET /v1/protocols/{id}/enrollment-trends` | S8 |
-| 20 | `GET /v1/deviations/by-action` | S9 |
-| 21 | `GET /v1/deviations/resolution-rate` | S9 |
-| 22 | `GET /v1/facilities/ranking` | S9 |
-| 23 | `GET /v1/events/processing-quality` | S10 |
-| 24 | `GET /v1/patients/at-risk-hotspots` | S10 |
-| 25 | `GET /v1/patients/repeat-deviations` | S10 |
-| 26 | `GET /v1/exports/compliance-report` | S11 |
+| 7 | `GET /v1/patients/{id}/events` | S5 |
+| 8 | `GET /v1/patients/{id}/deviations` | S5 |
+| 9 | `GET /v1/deviations` | S6 |
+| 10 | `GET /v1/deviations/trends` | S6 |
+| 11 | `GET /v1/intelligence/summary` | S6 |
+| 12 | `GET /v1/events/summary` | S7 |
+| 13 | `GET /v1/events/trends` | S7 |
+| 14 | `GET /v1/events/by-resource-type` | S7 |
+| 15 | `GET /v1/events/by-facility` | S7 |
+| 16 | `GET /v1/events/by-practitioner` | S7 |
+| 17 | `GET /v1/events/by-source` | S7 |
+| 18 | `GET /v1/events/compare-sources` | S7 |
+| 19 | `GET /v1/protocols/{id}/step-analytics` | S8 |
+| 20 | `GET /v1/protocols/{id}/completion-funnel` | S8 |
+| 21 | `GET /v1/protocols/{id}/outcome-distribution` | S8 |
+| 22 | `GET /v1/protocols/{id}/enrollment-trends` | S8 |
+| 23 | `GET /v1/deviations/by-action` | S9 |
+| 24 | `GET /v1/deviations/resolution-rate` | S9 |
+| 25 | `GET /v1/facilities/ranking` | S9 |
+| 26 | `GET /v1/events/processing-quality` | S10 |
+| 27 | `GET /v1/patients/at-risk-hotspots` | S10 |
+| 28 | `GET /v1/patients/repeat-deviations` | S10 |
+| 29 | `GET /v1/exports/compliance-report` | S11 |
+| 30 | `GET /v1/ingestion/funnel` | S14 |
+| 31 | `GET /v1/ingestion/rejections` | S14 |
+| 32 | `GET /v1/ingestion/source-quality` | S14 |
+| 33 | `GET /v1/ingestion/pipeline-loss` | S14 |
 
 ---
 
@@ -470,18 +555,20 @@ S0 (Docs)
       └── S2 (Config)
            └── S3 (Entities & Repos)
                 ├── S4 (Compliance Summary — 3 endpoints)
-                ├── S5 (Patient Compliance — 3 endpoints)
+                ├── S5 (Patient Compliance — 5 endpoints)
                 ├── S6 (Deviations & Intelligence — 3 endpoints)
-                ├── S7 (Event Volume — 6 endpoints)
+                ├── S7 (Event Volume — 8 endpoints)
                 ├── S8 (Protocol Analytics — 4 endpoints)
                 ├── S9 (Deviation Analytics + Facility Ranking — 3 endpoints)
-                └── S10 (Processing Quality + Patient Risk — 3 endpoints)
+                ├── S10 (Processing Quality + Patient Risk — 3 endpoints)
+                └── S14 (Ingestion Analytics — 4 endpoints)
                      └── S11 (Export — 1 endpoint)
                           └── S12 (Observability)
                                └── S13 (Integration Tests)
+                                    └── S15 (Deployment & Containerization)
 ```
 
-**Critical path:** S0 → S1 → S2 → S3 → S4–S10 (parallelizable — 7 subtasks, 25 endpoints) → S11 → S12 → S13
+**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14 (parallelizable — 8 subtasks, 33 endpoints) → S11 → S12 → S13 → S15
 
 **Story Points Summary:**
 
@@ -492,13 +579,15 @@ S0 (Docs)
 | S2 Config | 1 | — |
 | S3 Entities & Repos | 5 | — |
 | S4 Compliance Summary | 5 | 3 |
-| S5 Patient Compliance | 5 | 3 |
+| S5 Patient Compliance | 5 | 5 |
 | S6 Deviations & Intelligence | 5 | 3 |
-| S7 Event Volume | 5 | 6 |
+| S7 Event Volume + Source Comparison | 5 | 8 |
 | S8 Protocol Analytics | 5 | 4 |
 | S9 Deviation Analytics + Facility Ranking | 5 | 3 |
 | S10 Processing Quality + Patient Risk | 5 | 3 |
 | S11 Export | 3 | 1 |
 | S12 Observability | 2 | — |
 | S13 Integration Tests | 5 | — |
-| **Total** | **53** | **26** |
+| S14 Ingestion Analytics (inbound_event) | 5 | 4 |
+| S15 Deployment & Containerization | 5 | — |
+| **Total** | **63** | **33** |
