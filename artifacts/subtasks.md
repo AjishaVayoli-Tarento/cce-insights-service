@@ -3,9 +3,9 @@
 **Epic:** CCE Insights Service — Compliance Analytics & Dashboards  
 **Component:** `cce-insights-service`  
 **Sprint Target:** Release 1.0.0  
-**Total Subtasks:** 15  
-**Total Story Points:** 63  
-**Total Endpoints:** 33  
+**Total Subtasks:** 16  
+**Total Story Points:** 68  
+**Total Endpoints:** 38  
 
 > Each subtask is a single PR-able unit. Execute in listed order — each depends on the prior one being merged. Subtasks S4–S9 can be parallelized after S3 is merged.
 
@@ -487,7 +487,7 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 - [ ] `RELEASE_NOTES.md` — v1.0.0 release with full endpoint inventory, architecture summary, bug fixes, known limitations
 - [ ] `README.md` — rewritten with project overview, quick start, endpoint summary, configuration, project structure
 - [ ] Code optimization: extract `DateUtil` utility, fix `FacilityRankingService` deviation count bug, add missing `logstash-logback-encoder` dependency
-- [ ] All `.md` files updated to reflect 33 endpoints, 6 entities, 10 services, 10 controllers, InboundEvent/IngestionAnalytics additions
+- [ ] All `.md` files updated to reflect 38 endpoints, 6 entities, 10 services + DateUtil, 11 controllers, InboundEvent/IngestionAnalytics/Lookups/Caching additions
 
 **Files:**
 - `Dockerfile`
@@ -528,7 +528,7 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 | 15 | `GET /v1/insights/events/by-facility` | S7 |
 | 16 | `GET /v1/insights/events/by-practitioner` | S7 |
 | 17 | `GET /v1/insights/events/by-source` | S7 |
-| 18 | `GET /v1/insights/events/compare-sources` | S7 |
+| 18 | `GET /v1/insights/events/source-comparison` | S7 |
 | 19 | `GET /v1/insights/protocols/{id}/step-analytics` | S8 |
 | 20 | `GET /v1/insights/protocols/{id}/completion-funnel` | S8 |
 | 21 | `GET /v1/insights/protocols/{id}/outcome-distribution` | S8 |
@@ -544,6 +544,11 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 | 31 | `GET /v1/insights/ingestion/rejections` | S14 |
 | 32 | `GET /v1/insights/ingestion/source-quality` | S14 |
 | 33 | `GET /v1/insights/ingestion/pipeline-loss` | S14 |
+| 34 | `GET /v1/insights/lookups/protocols` | S16 |
+| 35 | `GET /v1/insights/lookups/facilities` | S16 |
+| 36 | `GET /v1/insights/lookups/practitioners` | S16 |
+| 37 | `GET /v1/insights/lookups/sources` | S16 |
+| 38 | `GET /v1/insights/lookups/patients` | S16 |
 
 ---
 
@@ -561,14 +566,15 @@ S0 (Docs)
                 ├── S8 (Protocol Analytics — 4 endpoints)
                 ├── S9 (Deviation Analytics + Facility Ranking — 3 endpoints)
                 ├── S10 (Processing Quality + Patient Risk — 3 endpoints)
-                └── S14 (Ingestion Analytics — 4 endpoints)
+                ├── S14 (Ingestion Analytics — 4 endpoints)
+                └── S16 (Lookups + Caching — 5 endpoints)
                      └── S11 (Export — 1 endpoint)
                           └── S12 (Observability)
                                └── S13 (Integration Tests)
                                     └── S15 (Deployment & Containerization)
 ```
 
-**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14 (parallelizable — 8 subtasks, 33 endpoints) → S11 → S12 → S13 → S15
+**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14+S16 (parallelizable — 9 subtasks, 38 endpoints) → S11 → S12 → S13 → S15
 
 **Story Points Summary:**
 
@@ -590,4 +596,5 @@ S0 (Docs)
 | S13 Integration Tests | 5 | — |
 | S14 Ingestion Analytics (inbound_event) | 5 | 4 |
 | S15 Deployment & Containerization | 5 | — |
-| **Total** | **63** | **33** |
+| S16 Lookups, Caching & Optimization | 3 | 6 |
+| **Total** | **66** | **38** |
