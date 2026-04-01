@@ -3,9 +3,9 @@
 **Epic:** CCE Insights Service — Compliance Analytics & Dashboards  
 **Component:** `cce-insights-service`  
 **Sprint Target:** Release 1.0.0  
-**Total Subtasks:** 15  
-**Total Story Points:** 63  
-**Total Endpoints:** 33  
+**Total Subtasks:** 16  
+**Total Story Points:** 68  
+**Total Endpoints:** 38  
 
 > Each subtask is a single PR-able unit. Execute in listed order — each depends on the prior one being merged. Subtasks S4–S9 can be parallelized after S3 is merged.
 
@@ -150,9 +150,9 @@ Implement the compliance summary endpoints — protocol adherence rates, facilit
 
 **Acceptance Criteria:**
 - [ ] `ComplianceSummaryService` — aggregation logic: compliance_rate = completed_steps / total_steps, category classification (on_track / at_risk / non_compliant based on step states)
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/compliance-summary` — protocol-level compliance metrics with step metrics and deviation breakdown
-- [ ] `GET /v1/facilities/{facilityId}/compliance-summary` — facility-level compliance across all protocols with per-protocol breakdown
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/patients` — list patients by compliance status (on_track/at_risk/non_compliant) with cursor pagination
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/compliance-summary` — protocol-level compliance metrics with step metrics and deviation breakdown
+- [ ] `GET /v1/insights/facilities/{facilityId}/compliance-summary` — facility-level compliance across all protocols with per-protocol breakdown
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/patients` — list patients by compliance status (on_track/at_risk/non_compliant) with cursor pagination
 - [ ] DTOs: `ComplianceSummaryDto`, `FacilitySummaryDto`, `PatientComplianceDto`
 - [ ] Response format: `{ "data": { ... } }` envelope; paginated lists use `{ "data": [...], "pagination": {...} }`
 - [ ] Unit tests for adherence calculation edge cases (0 steps, all completed, all missed)
@@ -179,11 +179,11 @@ Implement patient-level compliance endpoints — timeline view, protocol trackin
 
 **Acceptance Criteria:**
 - [ ] `PatientTimelineService` — timeline assembly combining events and step status changes, per-protocol step progression
-- [ ] `GET /v1/patients/{patientId}/compliance-timeline` — chronological timeline across all enrolled protocols with event history and step status
-- [ ] `GET /v1/patients/{patientId}/protocol-tracking` — list all protocol instances for a patient with compliance rates
-- [ ] `GET /v1/patients/{patientId}/protocol-tracking/{protocolInstanceId}` — detailed step-by-step tracking with deviations for a single protocol
-- [ ] `GET /v1/patients/{patientId}/events` — patient event history from event_log with resource type, source, and date filtering
-- [ ] `GET /v1/patients/{patientId}/deviations` — patient deviation history across all protocol instances with type and date filtering
+- [ ] `GET /v1/insights/patients/{patientId}/compliance-timeline` — chronological timeline across all enrolled protocols with event history and step status
+- [ ] `GET /v1/insights/patients/{patientId}/protocol-tracking` — list all protocol instances for a patient with compliance rates
+- [ ] `GET /v1/insights/patients/{patientId}/protocol-tracking/{protocolInstanceId}` — detailed step-by-step tracking with deviations for a single protocol
+- [ ] `GET /v1/insights/patients/{patientId}/events` — patient event history from event_log with resource type, source, and date filtering
+- [ ] `GET /v1/insights/patients/{patientId}/deviations` — patient deviation history across all protocol instances with type and date filtering
 - [ ] DTOs: `PatientTimelineDto`, `PatientComplianceDto`
 - [ ] Unit tests for timeline ordering, empty results, multi-protocol scenarios
 - [ ] MockMvc tests for each endpoint: 200 OK, 404 patient not found
@@ -207,9 +207,9 @@ Implement the core deviation endpoints — paginated list, time-bucketed trends,
 
 **Acceptance Criteria:**
 - [ ] `DeviationAnalyticsService` — deviation queries, trend aggregation with `DATE_TRUNC`
-- [ ] `GET /v1/deviations` — paginated list with filters: `deviationType`, `facilityId`, `protocolDefinitionId`, `startDate`, `endDate`, `sort`, cursor pagination
-- [ ] `GET /v1/deviations/trends` — time-bucketed counts by `interval` (daily/weekly/monthly) and deviation type
-- [ ] `GET /v1/intelligence/summary` — aggregated deviation counts by type and severity, recent activity summary (24h/7d/30d)
+- [ ] `GET /v1/insights/deviations` — paginated list with filters: `deviationType`, `facilityId`, `protocolDefinitionId`, `startDate`, `endDate`, `sort`, cursor pagination
+- [ ] `GET /v1/insights/deviations/trends` — time-bucketed counts by `interval` (daily/weekly/monthly) and deviation type
+- [ ] `GET /v1/insights/intelligence/summary` — aggregated deviation counts by type and severity, recent activity summary (24h/7d/30d)
 - [ ] DTOs: `DeviationDto`, `DeviationTrendDto`, `IntelligenceSummaryDto`
 - [ ] Unit tests for trend bucketing, empty date ranges, type filtering
 - [ ] MockMvc tests for each endpoint: 200 OK, pagination, filter combinations
@@ -235,13 +235,13 @@ Implement event volume analytics — aggregate counts of clinical events grouped
 
 **Acceptance Criteria:**
 - [ ] `EventVolumeService` — queries `event_log` table, excludes duplicates (`processing_status != 'DUPLICATE'`), JSONB path extraction for practitioner references (COALESCE across 5 paths)
-- [ ] `GET /v1/events/summary` — composite summary: total events, processing status breakdown, top resource types, facilities, sources
-- [ ] `GET /v1/events/trends` — time-series event volume with `interval` (daily/weekly/monthly) and resource type breakdown
-- [ ] `GET /v1/events/by-resource-type` — event counts grouped by `data->>'resourceType'` with percentages
-- [ ] `GET /v1/events/by-facility` — event counts per facility with resource type sub-groups, cursor pagination
-- [ ] `GET /v1/events/by-practitioner` — event counts per practitioner via JSONB COALESCE extraction, cursor pagination. Practitioner `display` field is best-effort.
-- [ ] `GET /v1/events/by-source` — event counts per source system with status breakdown (uses inbound_event)
-- [ ] `GET /v1/events/compare-sources` — compare two source systems: overlap, unique events, sample pairs (uses inbound_event)
+- [ ] `GET /v1/insights/events/summary` — composite summary: total events, processing status breakdown, top resource types, facilities, sources
+- [ ] `GET /v1/insights/events/trends` — time-series event volume with `interval` (daily/weekly/monthly) and resource type breakdown
+- [ ] `GET /v1/insights/events/by-resource-type` — event counts grouped by `data->>'resourceType'` with percentages
+- [ ] `GET /v1/insights/events/by-facility` — event counts per facility with resource type sub-groups, cursor pagination
+- [ ] `GET /v1/insights/events/by-practitioner` — event counts per practitioner via JSONB COALESCE extraction, cursor pagination. Practitioner `display` field is best-effort.
+- [ ] `GET /v1/insights/events/by-source` — event counts per source system with status breakdown (uses inbound_event)
+- [ ] `GET /v1/insights/events/compare-sources` — compare two source systems: overlap, unique events, sample pairs (uses inbound_event)
 - [ ] DTOs: `EventVolumeSummaryDto`, `EventVolumeTrendDto`, `ResourceTypeCountDto`, `FacilityEventCountDto`, `PractitionerEventCountDto`, `SourceSystemCountDto`
 - [ ] Unit tests for JSONB path extraction logic, percentage calculation, null practitioner handling
 - [ ] MockMvc tests for all 6 endpoints: 200 OK, filters, pagination
@@ -270,10 +270,10 @@ Implement protocol-level analytics — per-step performance (timeliness, median 
 
 **Acceptance Criteria:**
 - [ ] `ProtocolAnalyticsService` — step-level aggregation with `PERCENTILE_CONT(0.5)`, funnel calculation (reached vs completed per action), outcome distribution, enrollment trend bucketing
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/step-analytics` — per-action completion rate, timeliness distribution (EARLY/ON_TIME/LATE), avg + median days to complete
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/completion-funnel` — drop-off rates at each sequential step; `stepOrder` derived from PlanDefinition action ordering
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/outcome-distribution` — percentage of protocol instances in each terminal status (ACTIVE/COMPLETED/WITHDRAWN/EXPIRED)
-- [ ] `GET /v1/protocols/{protocolDefinitionId}/enrollment-trends` — new enrollments over time by `interval` (daily/weekly/monthly) with optional facility filter
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/step-analytics` — per-action completion rate, timeliness distribution (EARLY/ON_TIME/LATE), avg + median days to complete
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/completion-funnel` — drop-off rates at each sequential step; `stepOrder` derived from PlanDefinition action ordering
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/outcome-distribution` — percentage of protocol instances in each terminal status (ACTIVE/COMPLETED/WITHDRAWN/EXPIRED)
+- [ ] `GET /v1/insights/protocols/{protocolDefinitionId}/enrollment-trends` — new enrollments over time by `interval` (daily/weekly/monthly) with optional facility filter
 - [ ] DTOs: `StepAnalyticsDto`, `CompletionFunnelDto`, `OutcomeDistributionDto`, `EnrollmentTrendDto`
 - [ ] Unit tests for: percentile calculation, funnel ordering, zero-enrollment edge cases, single-step protocol
 - [ ] MockMvc tests for all 4 endpoints: 200 OK, filters, 404 protocol not found
@@ -301,9 +301,9 @@ Implement advanced deviation analytics — most-deviated protocol steps (by acti
 **Acceptance Criteria:**
 - [ ] Extension to `DeviationAnalyticsService` — by-action grouping with affected patient counts, resolution rate tracking (resolved = step reached COMPLETED after OVERDUE deviation; escalated = step reached MISSED)
 - [ ] `FacilityRankingService` — cross-table aggregation (protocol_instance + step_instance + event_log + deviation) per facility, rank assignment by configurable metric
-- [ ] `GET /v1/deviations/by-action` — most deviated-from protocol steps grouped by `actionId`, with overdue/missed breakdown and `affectedPatients` count
-- [ ] `GET /v1/deviations/resolution-rate` — OVERDUE deviation outcomes: resolved count + percentage, escalated count + percentage, `avgDaysToResolve`, per-protocol breakdown
-- [ ] `GET /v1/facilities/ranking` — facility leaderboard with `rankBy` param (`complianceRate`/`deviationCount`/`eventVolume`), `order` (asc/desc), cursor pagination
+- [ ] `GET /v1/insights/deviations/by-action` — most deviated-from protocol steps grouped by `actionId`, with overdue/missed breakdown and `affectedPatients` count
+- [ ] `GET /v1/insights/deviations/resolution-rate` — OVERDUE deviation outcomes: resolved count + percentage, escalated count + percentage, `avgDaysToResolve`, per-protocol breakdown
+- [ ] `GET /v1/insights/facilities/ranking` — facility leaderboard with `rankBy` param (`complianceRate`/`deviationCount`/`eventVolume`), `order` (asc/desc), cursor pagination
 - [ ] DTOs: `DeviationByActionDto`, `DeviationResolutionDto`, `FacilityRankingDto`
 - [ ] Unit tests for: resolution classification logic, ranking sort stability, edge cases (facility with no deviations, action with only overdue)
 - [ ] MockMvc tests for all 3 endpoints: 200 OK, rankBy options, filter combinations
@@ -330,9 +330,9 @@ Implement event processing quality monitoring (integration health) and patient r
 **Acceptance Criteria:**
 - [ ] `ProcessingQualityService` — MATCHED/ZERO_MATCH/DUPLICATE ratios per source system from `event_log.processing_status`
 - [ ] `PatientRiskService` — patient compliance categorization across all active protocol instances per facility (on_track/at_risk/non_compliant via correlated subqueries on step_instance.state); repeat deviation identification with threshold filter
-- [ ] `GET /v1/events/processing-quality` — per-source breakdown of MATCHED/ZERO_MATCH/DUPLICATE with percentages and overall totals
-- [ ] `GET /v1/patients/at-risk-hotspots` — per-facility concentration of at_risk + non_compliant patients, ordered by non_compliant count DESC, cursor pagination
-- [ ] `GET /v1/patients/repeat-deviations` — patients with `totalDeviations >= minDeviations` (default 3), with overdue/missed counts, affected protocols/steps, recent deviation details, cursor pagination
+- [ ] `GET /v1/insights/events/processing-quality` — per-source breakdown of MATCHED/ZERO_MATCH/DUPLICATE with percentages and overall totals
+- [ ] `GET /v1/insights/patients/at-risk-hotspots` — per-facility concentration of at_risk + non_compliant patients, ordered by non_compliant count DESC, cursor pagination
+- [ ] `GET /v1/insights/patients/repeat-deviations` — patients with `totalDeviations >= minDeviations` (default 3), with overdue/missed counts, affected protocols/steps, recent deviation details, cursor pagination
 - [ ] DTOs: `ProcessingQualityDto`, `AtRiskHotspotDto`, `RepeatDeviationPatientDto`
 - [ ] Unit tests for: compliance categorization across multi-protocol patients, minDeviations threshold, percentage edge cases (division by zero)
 - [ ] MockMvc tests for all 3 endpoints: 200 OK, filters, pagination
@@ -360,7 +360,7 @@ Implement the data export endpoint. Supports CSV format using streaming to avoid
 
 **Acceptance Criteria:**
 - [ ] `ExportService` — cursor-based streaming from database, CSV row transformation
-- [ ] `GET /v1/exports/compliance-report` — query params: `format` (json/csv), `protocolDefinitionId`, `facilityId`, `startDate`, `endDate`
+- [ ] `GET /v1/insights/exports/compliance-report` — query params: `format` (json/csv), `protocolDefinitionId`, `facilityId`, `startDate`, `endDate`
 - [ ] CSV export uses `StreamingResponseBody` — no full dataset buffering
 - [ ] Response headers: `Content-Type: text/csv`, `Content-Disposition: attachment; filename="..."`
 - [ ] Unit tests for CSV formatting (header row, escaping, date formatting)
@@ -446,10 +446,10 @@ Implement ingestion pipeline analytics by querying the `inbound_event` table (ow
 - [ ] `InboundEvent` entity — maps `inbound_event` table, `@Immutable`, 16 columns including `status`, `rejection_reason`, `error_details`, `raw_payload` (JSONB)
 - [ ] `InboundEventRepository` — 12 native SQL queries for status counts, rejection analysis, source quality, trends, overlap detection, and pipeline loss
 - [ ] `IngestionAnalyticsService` — ingestion funnel, rejection analytics, source data quality, pipeline loss
-- [ ] `GET /v1/ingestion/funnel` — acceptance/rejection/duplicate rates with optional interval-based trends
-- [ ] `GET /v1/ingestion/rejections` — rejection reason breakdown, per-source rejection rates with top reasons
-- [ ] `GET /v1/ingestion/source-quality` — per-source quality scores (acceptance/rejection/duplicate rates)
-- [ ] `GET /v1/ingestion/pipeline-loss` — accepted events vs compliance-matched, loss rate per source
+- [ ] `GET /v1/insights/ingestion/funnel` — acceptance/rejection/duplicate rates with optional interval-based trends
+- [ ] `GET /v1/insights/ingestion/rejections` — rejection reason breakdown, per-source rejection rates with top reasons
+- [ ] `GET /v1/insights/ingestion/source-quality` — per-source quality scores (acceptance/rejection/duplicate rates)
+- [ ] `GET /v1/insights/ingestion/pipeline-loss` — accepted events vs compliance-matched, loss rate per source
 - [ ] DTOs: `IngestionFunnelDto`, `RejectionAnalyticsDto`, `SourceDataQualityDto`, `PipelineLossDto`
 - [ ] Migration: `EventVolumeService.getBySource()` and `compareSourceSystems()` now use `InboundEventRepository`
 - [ ] `init-schema.sql` updated with `inbound_event` DDL
@@ -487,7 +487,7 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 - [ ] `RELEASE_NOTES.md` — v1.0.0 release with full endpoint inventory, architecture summary, bug fixes, known limitations
 - [ ] `README.md` — rewritten with project overview, quick start, endpoint summary, configuration, project structure
 - [ ] Code optimization: extract `DateUtil` utility, fix `FacilityRankingService` deviation count bug, add missing `logstash-logback-encoder` dependency
-- [ ] All `.md` files updated to reflect 33 endpoints, 6 entities, 10 services, 10 controllers, InboundEvent/IngestionAnalytics additions
+- [ ] All `.md` files updated to reflect 38 endpoints, 6 entities, 10 services + DateUtil, 11 controllers, InboundEvent/IngestionAnalytics/Lookups/Caching additions
 
 **Files:**
 - `Dockerfile`
@@ -511,39 +511,44 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 
 | # | Endpoint | Subtask |
 |---|----------|---------|
-| 1 | `GET /v1/protocols/{id}/compliance-summary` | S4 |
-| 2 | `GET /v1/facilities/{id}/compliance-summary` | S4 |
-| 3 | `GET /v1/protocols/{id}/patients` | S4 |
-| 4 | `GET /v1/patients/{id}/compliance-timeline` | S5 |
-| 5 | `GET /v1/patients/{id}/protocol-tracking` | S5 |
-| 6 | `GET /v1/patients/{id}/protocol-tracking/{piId}` | S5 |
-| 7 | `GET /v1/patients/{id}/events` | S5 |
-| 8 | `GET /v1/patients/{id}/deviations` | S5 |
-| 9 | `GET /v1/deviations` | S6 |
-| 10 | `GET /v1/deviations/trends` | S6 |
-| 11 | `GET /v1/intelligence/summary` | S6 |
-| 12 | `GET /v1/events/summary` | S7 |
-| 13 | `GET /v1/events/trends` | S7 |
-| 14 | `GET /v1/events/by-resource-type` | S7 |
-| 15 | `GET /v1/events/by-facility` | S7 |
-| 16 | `GET /v1/events/by-practitioner` | S7 |
-| 17 | `GET /v1/events/by-source` | S7 |
-| 18 | `GET /v1/events/compare-sources` | S7 |
-| 19 | `GET /v1/protocols/{id}/step-analytics` | S8 |
-| 20 | `GET /v1/protocols/{id}/completion-funnel` | S8 |
-| 21 | `GET /v1/protocols/{id}/outcome-distribution` | S8 |
-| 22 | `GET /v1/protocols/{id}/enrollment-trends` | S8 |
-| 23 | `GET /v1/deviations/by-action` | S9 |
-| 24 | `GET /v1/deviations/resolution-rate` | S9 |
-| 25 | `GET /v1/facilities/ranking` | S9 |
-| 26 | `GET /v1/events/processing-quality` | S10 |
-| 27 | `GET /v1/patients/at-risk-hotspots` | S10 |
-| 28 | `GET /v1/patients/repeat-deviations` | S10 |
-| 29 | `GET /v1/exports/compliance-report` | S11 |
-| 30 | `GET /v1/ingestion/funnel` | S14 |
-| 31 | `GET /v1/ingestion/rejections` | S14 |
-| 32 | `GET /v1/ingestion/source-quality` | S14 |
-| 33 | `GET /v1/ingestion/pipeline-loss` | S14 |
+| 1 | `GET /v1/insights/protocols/{id}/compliance-summary` | S4 |
+| 2 | `GET /v1/insights/facilities/{id}/compliance-summary` | S4 |
+| 3 | `GET /v1/insights/protocols/{id}/patients` | S4 |
+| 4 | `GET /v1/insights/patients/{id}/compliance-timeline` | S5 |
+| 5 | `GET /v1/insights/patients/{id}/protocol-tracking` | S5 |
+| 6 | `GET /v1/insights/patients/{id}/protocol-tracking/{piId}` | S5 |
+| 7 | `GET /v1/insights/patients/{id}/events` | S5 |
+| 8 | `GET /v1/insights/patients/{id}/deviations` | S5 |
+| 9 | `GET /v1/insights/deviations` | S6 |
+| 10 | `GET /v1/insights/deviations/trends` | S6 |
+| 11 | `GET /v1/insights/intelligence/summary` | S6 |
+| 12 | `GET /v1/insights/events/summary` | S7 |
+| 13 | `GET /v1/insights/events/trends` | S7 |
+| 14 | `GET /v1/insights/events/by-resource-type` | S7 |
+| 15 | `GET /v1/insights/events/by-facility` | S7 |
+| 16 | `GET /v1/insights/events/by-practitioner` | S7 |
+| 17 | `GET /v1/insights/events/by-source` | S7 |
+| 18 | `GET /v1/insights/events/source-comparison` | S7 |
+| 19 | `GET /v1/insights/protocols/{id}/step-analytics` | S8 |
+| 20 | `GET /v1/insights/protocols/{id}/completion-funnel` | S8 |
+| 21 | `GET /v1/insights/protocols/{id}/outcome-distribution` | S8 |
+| 22 | `GET /v1/insights/protocols/{id}/enrollment-trends` | S8 |
+| 23 | `GET /v1/insights/deviations/by-action` | S9 |
+| 24 | `GET /v1/insights/deviations/resolution-rate` | S9 |
+| 25 | `GET /v1/insights/facilities/ranking` | S9 |
+| 26 | `GET /v1/insights/events/processing-quality` | S10 |
+| 27 | `GET /v1/insights/patients/at-risk-hotspots` | S10 |
+| 28 | `GET /v1/insights/patients/repeat-deviations` | S10 |
+| 29 | `GET /v1/insights/exports/compliance-report` | S11 |
+| 30 | `GET /v1/insights/ingestion/funnel` | S14 |
+| 31 | `GET /v1/insights/ingestion/rejections` | S14 |
+| 32 | `GET /v1/insights/ingestion/source-quality` | S14 |
+| 33 | `GET /v1/insights/ingestion/pipeline-loss` | S14 |
+| 34 | `GET /v1/insights/lookups/protocols` | S16 |
+| 35 | `GET /v1/insights/lookups/facilities` | S16 |
+| 36 | `GET /v1/insights/lookups/practitioners` | S16 |
+| 37 | `GET /v1/insights/lookups/sources` | S16 |
+| 38 | `GET /v1/insights/lookups/patients` | S16 |
 
 ---
 
@@ -561,14 +566,15 @@ S0 (Docs)
                 ├── S8 (Protocol Analytics — 4 endpoints)
                 ├── S9 (Deviation Analytics + Facility Ranking — 3 endpoints)
                 ├── S10 (Processing Quality + Patient Risk — 3 endpoints)
-                └── S14 (Ingestion Analytics — 4 endpoints)
+                ├── S14 (Ingestion Analytics — 4 endpoints)
+                └── S16 (Lookups + Caching — 5 endpoints)
                      └── S11 (Export — 1 endpoint)
                           └── S12 (Observability)
                                └── S13 (Integration Tests)
                                     └── S15 (Deployment & Containerization)
 ```
 
-**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14 (parallelizable — 8 subtasks, 33 endpoints) → S11 → S12 → S13 → S15
+**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14+S16 (parallelizable — 9 subtasks, 38 endpoints) → S11 → S12 → S13 → S15
 
 **Story Points Summary:**
 
@@ -590,4 +596,5 @@ S0 (Docs)
 | S13 Integration Tests | 5 | — |
 | S14 Ingestion Analytics (inbound_event) | 5 | 4 |
 | S15 Deployment & Containerization | 5 | — |
-| **Total** | **63** | **33** |
+| S16 Lookups, Caching & Optimization | 3 | 6 |
+| **Total** | **66** | **38** |
