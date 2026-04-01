@@ -497,6 +497,216 @@ ON CONFLICT DO NOTHING;
 
 
 -- =============================================================================
+-- SOURCE COMPARISON PAIRED EVENTS
+-- =============================================================================
+-- Both sources deliver the same clinical events on most days (MATCH).
+-- On 3 days there are intentional gaps (1-2 events unique to one source)
+-- to showcase data delivery consistency monitoring.
+--
+-- MATCHING days: Mar 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 27, 30
+-- MISMATCH days:
+--   Mar 16 — extra Encounter from ebuzima-direct only (openhim gap)
+--   Mar 24 — existing direct Encounter has no openhim companion
+--   Mar 29 — existing openhim Immunization has no direct companion
+-- =============================================================================
+
+\echo '--- [1/2] Inserting source comparison paired events ---'
+
+-- Mar 4: P01 encounter — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000001-0000-0000-0000-000000000001','evt-sc-d-001','ebuzima-direct',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1001',
+ NOW()-INTERVAL '28 days','application/fhir+json','FAC-0001','corr-sc-001',
+ '{"resourceType":"Encounter","id":"enc-sc-001","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '28 days'),
+('2e000001-0000-0000-0000-000000000002','evt-sc-oh-001','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1001',
+ NOW()-INTERVAL '28 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-001',
+ '{"resourceType":"Encounter","id":"enc-sc-001","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '28 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 6: P04 immunization — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000002-0000-0000-0000-000000000001','evt-sc-d-002','ebuzima-direct',
+ 'org.openphc.cce.immunization','1.0','260225-0002-2001',
+ NOW()-INTERVAL '26 days','application/fhir+json','FAC-0002','corr-sc-002',
+ '{"resourceType":"Immunization","id":"imm-sc-002","status":"completed","patient":{"reference":"Patient/260225-0002-2001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"132"}]}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '26 days'),
+('2e000002-0000-0000-0000-000000000002','evt-sc-oh-002','ebuzima-openhim',
+ 'org.openphc.cce.immunization','1.0','260225-0002-2001',
+ NOW()-INTERVAL '26 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0002','corr-sc-002',
+ '{"resourceType":"Immunization","id":"imm-sc-002","status":"completed","patient":{"reference":"Patient/260225-0002-2001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"132"}]}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '26 days' + INTERVAL '4 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 8: P06 encounter — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000003-0000-0000-0000-000000000001','evt-sc-d-003','ebuzima-direct',
+ 'org.openphc.cce.encounter','1.0','260225-0003-3001',
+ NOW()-INTERVAL '24 days','application/fhir+json','FAC-0003','corr-sc-003',
+ '{"resourceType":"Encounter","id":"enc-sc-003","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '24 days'),
+('2e000003-0000-0000-0000-000000000002','evt-sc-oh-003','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0003-3001',
+ NOW()-INTERVAL '24 days' + INTERVAL '4 seconds','application/fhir+json','FAC-0003','corr-sc-003',
+ '{"resourceType":"Encounter","id":"enc-sc-003","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '24 days' + INTERVAL '6 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 10: P02 encounter — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000004-0000-0000-0000-000000000001','evt-sc-d-004','ebuzima-direct',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1002',
+ NOW()-INTERVAL '22 days','application/fhir+json','FAC-0001','corr-sc-004',
+ '{"resourceType":"Encounter","id":"enc-sc-004","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '22 days'),
+('2e000004-0000-0000-0000-000000000002','evt-sc-oh-004','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1002',
+ NOW()-INTERVAL '22 days' + INTERVAL '1 second','application/fhir+json','FAC-0001','corr-sc-004',
+ '{"resourceType":"Encounter","id":"enc-sc-004","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '22 days' + INTERVAL '3 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 12: P07 encounter — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000005-0000-0000-0000-000000000001','evt-sc-d-005','ebuzima-direct',
+ 'org.openphc.cce.encounter','1.0','260225-0003-3002',
+ NOW()-INTERVAL '20 days','application/fhir+json','FAC-0003','corr-sc-005',
+ '{"resourceType":"Encounter","id":"enc-sc-005","status":"finished","subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '20 days'),
+('2e000005-0000-0000-0000-000000000002','evt-sc-oh-005','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0003-3002',
+ NOW()-INTERVAL '20 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0003','corr-sc-005',
+ '{"resourceType":"Encounter","id":"enc-sc-005","status":"finished","subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '20 days' + INTERVAL '4 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 14: P09 immunization — BOTH MATCH
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000006-0000-0000-0000-000000000001','evt-sc-d-006','ebuzima-direct',
+ 'org.openphc.cce.immunization','1.0','260225-0004-4001',
+ NOW()-INTERVAL '18 days','application/fhir+json','FAC-0004','corr-sc-006',
+ '{"resourceType":"Immunization","id":"imm-sc-006","status":"completed","patient":{"reference":"Patient/260225-0004-4001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"19"}]}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '18 days'),
+('2e000006-0000-0000-0000-000000000002','evt-sc-oh-006','ebuzima-openhim',
+ 'org.openphc.cce.immunization','1.0','260225-0004-4001',
+ NOW()-INTERVAL '18 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0004','corr-sc-006',
+ '{"resourceType":"Immunization","id":"imm-sc-006","status":"completed","patient":{"reference":"Patient/260225-0004-4001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"19"}]}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '18 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 16: P01 observation BOTH MATCH + P02 encounter DIRECT ONLY (openhim gap)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000007-0000-0000-0000-000000000001','evt-sc-d-007','ebuzima-direct',
+ 'org.openphc.cce.observation','1.0','260225-0001-1001',
+ NOW()-INTERVAL '16 days','application/fhir+json','FAC-0001','corr-sc-007',
+ '{"resourceType":"Observation","id":"obs-sc-007","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '16 days'),
+('2e000007-0000-0000-0000-000000000002','evt-sc-oh-007','ebuzima-openhim',
+ 'org.openphc.cce.observation','1.0','260225-0001-1001',
+ NOW()-INTERVAL '16 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0001','corr-sc-007',
+ '{"resourceType":"Observation","id":"obs-sc-007","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '16 days' + INTERVAL '4 seconds'),
+-- DIRECT ONLY — openhim missed this one (delivery gap)
+('2e000008-0000-0000-0000-000000000001','evt-sc-d-008','ebuzima-direct',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1002',
+ NOW()-INTERVAL '16 days' + INTERVAL '6 hours','application/fhir+json','FAC-0001','corr-sc-008',
+ '{"resourceType":"Encounter","id":"enc-sc-008","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '16 days' + INTERVAL '6 hours')
+ON CONFLICT DO NOTHING;
+
+-- Openhim companions for existing direct-only events (creates matches)
+
+-- Mar 18: openhim encounter for P06 (companion to existing direct evt-eb-d-0051)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000009-0000-0000-0000-000000000001','evt-sc-oh-009','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0003-3001',
+ NOW()-INTERVAL '14 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-009',
+ '{"resourceType":"Encounter","id":"enc-sc-009","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '14 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 20: openhim encounter for P01 (companion to existing direct evt-eb-d-2007)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000010-0000-0000-0000-000000000001','evt-sc-oh-010','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1001',
+ NOW()-INTERVAL '12 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-010',
+ '{"resourceType":"Encounter","id":"enc-sc-010","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '12 days' + INTERVAL '4 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 22: openhim observation for P06 (companion to existing direct evt-eb-d-2008)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000011-0000-0000-0000-000000000001','evt-sc-oh-011','ebuzima-openhim',
+ 'org.openphc.cce.observation','1.0','260225-0003-3001',
+ NOW()-INTERVAL '10 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-011',
+ '{"resourceType":"Observation","id":"obs-sc-011","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '10 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 27: openhim encounter for P02 (companion to existing direct evt-eb-d-1001)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000012-0000-0000-0000-000000000001','evt-sc-oh-012','ebuzima-openhim',
+ 'org.openphc.cce.encounter','1.0','260225-0001-1002',
+ NOW()-INTERVAL '5 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-012',
+ '{"resourceType":"Encounter","id":"enc-sc-012","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '5 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Mar 30: openhim observation for P06 (companion to existing direct evt-eb-d-1002)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000013-0000-0000-0000-000000000001','evt-sc-oh-013','ebuzima-openhim',
+ 'org.openphc.cce.observation','1.0','260225-0003-3001',
+ NOW()-INTERVAL '2 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-013',
+ '{"resourceType":"Observation","id":"obs-sc-013","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '2 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- Direct companion for existing openhim-only event
+
+-- Mar 25: direct immunization for P04 (companion to existing openhim evt-eb-oh-2006)
+INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
+  event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
+VALUES
+('2e000014-0000-0000-0000-000000000001','evt-sc-d-014','ebuzima-direct',
+ 'org.openphc.cce.immunization','1.0','260225-0002-2001',
+ NOW()-INTERVAL '7 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0002','corr-sc-014',
+ '{"resourceType":"Immunization","id":"imm-sc-014","status":"completed","patient":{"reference":"Patient/260225-0002-2001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"132"}]}}'::jsonb,
+ 'ACCEPTED',NULL,NULL, NOW()-INTERVAL '7 days' + INTERVAL '5 seconds')
+ON CONFLICT DO NOTHING;
+
+-- INTENTIONAL GAPS (no companion added):
+-- Mar 24: existing direct encounter for P10 (evt-eb-d-2009)  — NO openhim
+-- Mar 29: existing openhim immunization for P09 (evt-eb-oh-1001)  — NO direct
+-- Mar 16: new direct encounter for P02 (evt-sc-d-008)  — NO openhim
+
+
+-- =============================================================================
 -- SECTION 2 : COMPLIANCE SERVICE  →  cce_compliance database
 -- =============================================================================
 
