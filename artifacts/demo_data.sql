@@ -2,7 +2,7 @@
 -- CCE DEMO DATA — demo_data.sql
 -- =============================================================================
 -- Purpose  : Populate realistic backdated demo records for insights-ui screens
--- Sources  : ebuzima-direct | ebuzima-openhim
+-- Sources  : ebuzima-direct | ebuzima
 -- Patients : 12 patients across 4 facilities in Zambia
 -- Protocols: ANC High-Risk | EPI Child 0-5 | Hypertension Management
 -- Date range: ~180 days backdated from execution date (NOW())
@@ -16,7 +16,7 @@
 --   Patient Detail   → timeline, protocol tracking, events, deviations
 --   Deviations       → OVERDUE + MISSED deviations, trends, resolution rate
 --   Event Volume     → by resource type, facility, practitioner, source
---   Source Comparison → ebuzima-direct vs ebuzima-openhim overlap/unique
+--   Source Comparison → ebuzima-direct vs ebuzima overlap/unique
 --   Facility Analytics → ranking by compliance rate / deviation count
 
 -- =============================================================================
@@ -35,11 +35,11 @@ DELETE FROM inbound_event;
 --   Exports          → compliance report generation
 -- =============================================================================
 -- EVENTS-BY-SOURCE MISMATCH SCENARIOS (for demo highlight):
---   MS-1 : Patients P07-P09 send via ebuzima-openhim ONLY (direct gap)
+--   MS-1 : Patients P07-P09 send via ebuzima ONLY (direct gap)
 --   MS-2 : Patient P10 — Encounter ACCEPTED from direct, REJECTED from openhim
 --   MS-3 : Patient P11 — same cloudevents_id sent by both sources → DUPLICATE
 --   MS-4 : Patient P12 — Observation present in direct, ZERO_MATCH in openhim
---   MS-5 : ebuzima-openhim sends INVALID_FHIR for Immunization (rejected)
+--   MS-5 : ebuzima sends INVALID_FHIR for Immunization (rejected)
 -- =============================================================================
 
 -- Execution order: run Section 1 against cce_collector DB,
@@ -142,9 +142,9 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '155 days'),
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- FACILITY 0002 | ebuzima-openhim | P01-P06 | Parallel source for same patients
+-- FACILITY 0002 | ebuzima | P01-P06 | Parallel source for same patients
 -- ─────────────────────────────────────────────────────────────────────────────
-('1e000009-0000-0000-0000-000000000001','evt-eb-oh-0001','ebuzima-openhim',
+('1e000009-0000-0000-0000-000000000001','evt-eb-oh-0001','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1001',
  NOW()-INTERVAL '175 days','application/fhir+json','FAC-0002',
  'corr-oh-000001','src-oh-1001',
@@ -154,7 +154,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '175 days'),
 
 -- P01 - openhim ANC visit 2 (NOT sent via direct — mismatch MS-1 partial)
-('1e000010-0000-0000-0000-000000000001','evt-eb-oh-0002','ebuzima-openhim',
+('1e000010-0000-0000-0000-000000000001','evt-eb-oh-0002','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1001',
  NOW()-INTERVAL '49 days','application/fhir+json','FAC-0002',
  'corr-oh-000002','src-oh-1002',
@@ -164,7 +164,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '49 days'),
 
 -- P02 openhim
-('1e000011-0000-0000-0000-000000000001','evt-eb-oh-0003','ebuzima-openhim',
+('1e000011-0000-0000-0000-000000000001','evt-eb-oh-0003','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1002',
  NOW()-INTERVAL '168 days','application/fhir+json','FAC-0002',
  'corr-oh-000003','src-oh-2001',
@@ -174,7 +174,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '168 days'),
 
 -- P04-P06 - EPI (Immunization) via openhim
-('1e000012-0000-0000-0000-000000000001','evt-eb-oh-0004','ebuzima-openhim',
+('1e000012-0000-0000-0000-000000000001','evt-eb-oh-0004','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '160 days','application/fhir+json','FAC-0002',
  'corr-oh-000004','src-oh-4001',
@@ -184,7 +184,7 @@ INSERT INTO inbound_event (
    "occurrenceDateTime":"2025-10-23T10:00:00Z"}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '160 days'),
 
-('1e000013-0000-0000-0000-000000000001','evt-eb-oh-0005','ebuzima-openhim',
+('1e000013-0000-0000-0000-000000000001','evt-eb-oh-0005','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '118 days','application/fhir+json','FAC-0002',
  'corr-oh-000005','src-oh-4002',
@@ -194,7 +194,7 @@ INSERT INTO inbound_event (
    "occurrenceDateTime":"2025-12-05T10:00:00Z"}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '118 days'),
 
-('1e000014-0000-0000-0000-000000000001','evt-eb-oh-0006','ebuzima-openhim',
+('1e000014-0000-0000-0000-000000000001','evt-eb-oh-0006','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '76 days','application/fhir+json','FAC-0002',
  'corr-oh-000006','src-oh-4003',
@@ -204,7 +204,7 @@ INSERT INTO inbound_event (
    "occurrenceDateTime":"2026-01-16T11:00:00Z"}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '76 days'),
 
-('1e000015-0000-0000-0000-000000000001','evt-eb-oh-0007','ebuzima-openhim',
+('1e000015-0000-0000-0000-000000000001','evt-eb-oh-0007','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2002',
  NOW()-INTERVAL '150 days','application/fhir+json','FAC-0002',
  'corr-oh-000007','src-oh-5001',
@@ -215,7 +215,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '150 days'),
 
 -- P06 - HTN encounter via openhim
-('1e000016-0000-0000-0000-000000000001','evt-eb-oh-0008','ebuzima-openhim',
+('1e000016-0000-0000-0000-000000000001','evt-eb-oh-0008','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3001',
  NOW()-INTERVAL '140 days','application/fhir+json','FAC-0003',
  'corr-oh-000008','src-oh-6001',
@@ -224,7 +224,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '140 days'),
 
-('1e000017-0000-0000-0000-000000000001','evt-eb-oh-0009','ebuzima-openhim',
+('1e000017-0000-0000-0000-000000000001','evt-eb-oh-0009','ebuzima',
  'org.openphc.cce.observation','1.0','260225-0003-3001',
  NOW()-INTERVAL '140 days','application/fhir+json','FAC-0003',
  'corr-oh-000009','src-oh-6002',
@@ -234,7 +234,7 @@ INSERT INTO inbound_event (
    "valueQuantity":{"value":162,"unit":"mmHg"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '140 days'),
 
-('1e000018-0000-0000-0000-000000000001','evt-eb-oh-0010','ebuzima-openhim',
+('1e000018-0000-0000-0000-000000000001','evt-eb-oh-0010','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3001',
  NOW()-INTERVAL '98 days','application/fhir+json','FAC-0003',
  'corr-oh-000010','src-oh-6003',
@@ -244,10 +244,10 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '98 days'),
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- MS-1: P07-P09 — ONLY ebuzima-openhim sends (no direct equivalent)
+-- MS-1: P07-P09 — ONLY ebuzima sends (no direct equivalent)
 --       Showcases gap in ebuzima-direct coverage
 -- ─────────────────────────────────────────────────────────────────────────────
-('1e000019-0000-0000-0000-000000000001','evt-eb-oh-0011','ebuzima-openhim',
+('1e000019-0000-0000-0000-000000000001','evt-eb-oh-0011','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3002',
  NOW()-INTERVAL '145 days','application/fhir+json','FAC-0003',
  'corr-oh-000011','src-oh-7001',
@@ -256,7 +256,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '145 days'),
 
-('1e000020-0000-0000-0000-000000000001','evt-eb-oh-0012','ebuzima-openhim',
+('1e000020-0000-0000-0000-000000000001','evt-eb-oh-0012','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3002',
  NOW()-INTERVAL '103 days','application/fhir+json','FAC-0003',
  'corr-oh-000012','src-oh-7002',
@@ -265,7 +265,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '103 days'),
 
-('1e000021-0000-0000-0000-000000000001','evt-eb-oh-0013','ebuzima-openhim',
+('1e000021-0000-0000-0000-000000000001','evt-eb-oh-0013','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3003',
  NOW()-INTERVAL '138 days','application/fhir+json','FAC-0003',
  'corr-oh-000013','src-oh-8001',
@@ -274,7 +274,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3003"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '138 days'),
 
-('1e000022-0000-0000-0000-000000000001','evt-eb-oh-0014','ebuzima-openhim',
+('1e000022-0000-0000-0000-000000000001','evt-eb-oh-0014','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0004-4001',
  NOW()-INTERVAL '130 days','application/fhir+json','FAC-0004',
  'corr-oh-000014','src-oh-9001',
@@ -297,7 +297,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0004-4002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '120 days'),
 
-('1e000024-0000-0000-0000-000000000001','evt-eb-oh-0020','ebuzima-openhim',
+('1e000024-0000-0000-0000-000000000001','evt-eb-oh-0020','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0004-4002',
  NOW()-INTERVAL '120 days','application/fhir+json','FAC-0004',
  'corr-oh-020001','src-oh-10001',
@@ -330,7 +330,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '110 days'),
 
 -- openhim re-sends same event (different source → allowed, NOT duplicate)
-('1e000027-0000-0000-0000-000000000001','evt-shared-0001','ebuzima-openhim',
+('1e000027-0000-0000-0000-000000000001','evt-shared-0001','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0004-4003',
  NOW()-INTERVAL '110 days','application/fhir+json','FAC-0004',
  'corr-oh-030001','src-oh-11001',
@@ -340,7 +340,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '110 days'),
 
 -- openhim retries same event → DUPLICATE
-('1e000028-0000-0000-0000-000000000001','evt-shared-0001-retry','ebuzima-openhim',
+('1e000028-0000-0000-0000-000000000001','evt-shared-0001-retry','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0004-4003',
  NOW()-INTERVAL '109 days','application/fhir+json','FAC-0004',
  'corr-oh-030002','src-oh-11001',
@@ -372,7 +372,7 @@ INSERT INTO inbound_event (
    "valueQuantity":{"value":145,"unit":"mmHg"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '95 days'),
 
-('1e000031-0000-0000-0000-000000000001','evt-eb-oh-0040','ebuzima-openhim',
+('1e000031-0000-0000-0000-000000000001','evt-eb-oh-0040','ebuzima',
  'org.openphc.cce.observation','1.0',NULL,
  NOW()-INTERVAL '95 days','application/fhir+json','FAC-0004',
  'corr-oh-040001','src-oh-12001',
@@ -384,9 +384,9 @@ INSERT INTO inbound_event (
  NOW()-INTERVAL '95 days'),
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- MS-5: ebuzima-openhim sends INVALID_FHIR for Immunization batch
+-- MS-5: ebuzima sends INVALID_FHIR for Immunization batch
 -- ─────────────────────────────────────────────────────────────────────────────
-('1e000032-0000-0000-0000-000000000001','evt-eb-oh-0050','ebuzima-openhim',
+('1e000032-0000-0000-0000-000000000001','evt-eb-oh-0050','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2003',
  NOW()-INTERVAL '85 days','application/fhir+json','FAC-0002',
  'corr-oh-050001','src-oh-13001',
@@ -416,7 +416,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '14 days'),
 
-('1e000035-0000-0000-0000-000000000001','evt-eb-oh-0060','ebuzima-openhim',
+('1e000035-0000-0000-0000-000000000001','evt-eb-oh-0060','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3002',
  NOW()-INTERVAL '61 days','application/fhir+json','FAC-0003',
  'corr-oh-061001','src-oh-7003',
@@ -425,7 +425,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '61 days'),
 
-('1e000036-0000-0000-0000-000000000001','evt-eb-oh-0061','ebuzima-openhim',
+('1e000036-0000-0000-0000-000000000001','evt-eb-oh-0061','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '34 days','application/fhir+json','FAC-0002',
  'corr-oh-034001','src-oh-4004',
@@ -435,7 +435,7 @@ INSERT INTO inbound_event (
    "occurrenceDateTime":"2026-02-26T10:00:00Z"}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '34 days'),
 
-('1e000037-0000-0000-0000-000000000001','evt-eb-oh-0062','ebuzima-openhim',
+('1e000037-0000-0000-0000-000000000001','evt-eb-oh-0062','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2002',
  NOW()-INTERVAL '108 days','application/fhir+json','FAC-0002',
  'corr-oh-108001','src-oh-5002',
@@ -456,7 +456,7 @@ INSERT INTO inbound_event (
  NOW()-INTERVAL '30 days'),
 
 -- UNSUPPORTED_CONTENT_TYPE
-('1e000039-0000-0000-0000-000000000001','evt-eb-oh-0099','ebuzima-openhim',
+('1e000039-0000-0000-0000-000000000001','evt-eb-oh-0099','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1003',
  NOW()-INTERVAL '22 days','application/xml','FAC-0001',
  'corr-oh-099001',NULL,
@@ -475,7 +475,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '5 days'),
 
-('1e000041-0000-0000-0000-000000000001','evt-eb-oh-1001','ebuzima-openhim',
+('1e000041-0000-0000-0000-000000000001','evt-eb-oh-1001','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0004-4001',
  NOW()-INTERVAL '3 days','application/fhir+json','FAC-0004',
  'corr-oh-1001','src-oh-9002',
@@ -521,7 +521,7 @@ VALUES
  NOW()-INTERVAL '28 days','application/fhir+json','FAC-0001','corr-sc-001',
  '{"resourceType":"Encounter","id":"enc-sc-001","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '28 days'),
-('2e000001-0000-0000-0000-000000000002','evt-sc-oh-001','ebuzima-openhim',
+('2e000001-0000-0000-0000-000000000002','evt-sc-oh-001','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1001',
  NOW()-INTERVAL '28 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-001',
  '{"resourceType":"Encounter","id":"enc-sc-001","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
@@ -537,7 +537,7 @@ VALUES
  NOW()-INTERVAL '26 days','application/fhir+json','FAC-0002','corr-sc-002',
  '{"resourceType":"Immunization","id":"imm-sc-002","status":"completed","patient":{"reference":"Patient/260225-0002-2001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"132"}]}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '26 days'),
-('2e000002-0000-0000-0000-000000000002','evt-sc-oh-002','ebuzima-openhim',
+('2e000002-0000-0000-0000-000000000002','evt-sc-oh-002','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '26 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0002','corr-sc-002',
  '{"resourceType":"Immunization","id":"imm-sc-002","status":"completed","patient":{"reference":"Patient/260225-0002-2001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"132"}]}}'::jsonb,
@@ -553,7 +553,7 @@ VALUES
  NOW()-INTERVAL '24 days','application/fhir+json','FAC-0003','corr-sc-003',
  '{"resourceType":"Encounter","id":"enc-sc-003","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '24 days'),
-('2e000003-0000-0000-0000-000000000002','evt-sc-oh-003','ebuzima-openhim',
+('2e000003-0000-0000-0000-000000000002','evt-sc-oh-003','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3001',
  NOW()-INTERVAL '24 days' + INTERVAL '4 seconds','application/fhir+json','FAC-0003','corr-sc-003',
  '{"resourceType":"Encounter","id":"enc-sc-003","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
@@ -569,7 +569,7 @@ VALUES
  NOW()-INTERVAL '22 days','application/fhir+json','FAC-0001','corr-sc-004',
  '{"resourceType":"Encounter","id":"enc-sc-004","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '22 days'),
-('2e000004-0000-0000-0000-000000000002','evt-sc-oh-004','ebuzima-openhim',
+('2e000004-0000-0000-0000-000000000002','evt-sc-oh-004','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1002',
  NOW()-INTERVAL '22 days' + INTERVAL '1 second','application/fhir+json','FAC-0001','corr-sc-004',
  '{"resourceType":"Encounter","id":"enc-sc-004","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
@@ -585,7 +585,7 @@ VALUES
  NOW()-INTERVAL '20 days','application/fhir+json','FAC-0003','corr-sc-005',
  '{"resourceType":"Encounter","id":"enc-sc-005","status":"finished","subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '20 days'),
-('2e000005-0000-0000-0000-000000000002','evt-sc-oh-005','ebuzima-openhim',
+('2e000005-0000-0000-0000-000000000002','evt-sc-oh-005','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3002',
  NOW()-INTERVAL '20 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0003','corr-sc-005',
  '{"resourceType":"Encounter","id":"enc-sc-005","status":"finished","subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
@@ -601,7 +601,7 @@ VALUES
  NOW()-INTERVAL '18 days','application/fhir+json','FAC-0004','corr-sc-006',
  '{"resourceType":"Immunization","id":"imm-sc-006","status":"completed","patient":{"reference":"Patient/260225-0004-4001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"19"}]}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '18 days'),
-('2e000006-0000-0000-0000-000000000002','evt-sc-oh-006','ebuzima-openhim',
+('2e000006-0000-0000-0000-000000000002','evt-sc-oh-006','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0004-4001',
  NOW()-INTERVAL '18 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0004','corr-sc-006',
  '{"resourceType":"Immunization","id":"imm-sc-006","status":"completed","patient":{"reference":"Patient/260225-0004-4001"},"vaccineCode":{"coding":[{"system":"http://hl7.org/fhir/sid/cvx","code":"19"}]}}'::jsonb,
@@ -617,7 +617,7 @@ VALUES
  NOW()-INTERVAL '16 days','application/fhir+json','FAC-0001','corr-sc-007',
  '{"resourceType":"Observation","id":"obs-sc-007","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '16 days'),
-('2e000007-0000-0000-0000-000000000002','evt-sc-oh-007','ebuzima-openhim',
+('2e000007-0000-0000-0000-000000000002','evt-sc-oh-007','ebuzima',
  'org.openphc.cce.observation','1.0','260225-0001-1001',
  NOW()-INTERVAL '16 days' + INTERVAL '2 seconds','application/fhir+json','FAC-0001','corr-sc-007',
  '{"resourceType":"Observation","id":"obs-sc-007","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
@@ -636,7 +636,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
   event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
 VALUES
-('2e000009-0000-0000-0000-000000000001','evt-sc-oh-009','ebuzima-openhim',
+('2e000009-0000-0000-0000-000000000001','evt-sc-oh-009','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3001',
  NOW()-INTERVAL '14 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-009',
  '{"resourceType":"Encounter","id":"enc-sc-009","status":"finished","subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
@@ -647,7 +647,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
   event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
 VALUES
-('2e000010-0000-0000-0000-000000000001','evt-sc-oh-010','ebuzima-openhim',
+('2e000010-0000-0000-0000-000000000001','evt-sc-oh-010','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1001',
  NOW()-INTERVAL '12 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-010',
  '{"resourceType":"Encounter","id":"enc-sc-010","status":"finished","subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
@@ -658,7 +658,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
   event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
 VALUES
-('2e000011-0000-0000-0000-000000000001','evt-sc-oh-011','ebuzima-openhim',
+('2e000011-0000-0000-0000-000000000001','evt-sc-oh-011','ebuzima',
  'org.openphc.cce.observation','1.0','260225-0003-3001',
  NOW()-INTERVAL '10 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-011',
  '{"resourceType":"Observation","id":"obs-sc-011","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
@@ -669,7 +669,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
   event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
 VALUES
-('2e000012-0000-0000-0000-000000000001','evt-sc-oh-012','ebuzima-openhim',
+('2e000012-0000-0000-0000-000000000001','evt-sc-oh-012','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0001-1002',
  NOW()-INTERVAL '5 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0001','corr-sc-012',
  '{"resourceType":"Encounter","id":"enc-sc-012","status":"finished","subject":{"reference":"Patient/260225-0001-1002"}}'::jsonb,
@@ -680,7 +680,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO inbound_event (id, cloudevents_id, source, type, spec_version, subject,
   event_time, data_content_type, facility_id, correlation_id, raw_payload, status, received_at)
 VALUES
-('2e000013-0000-0000-0000-000000000001','evt-sc-oh-013','ebuzima-openhim',
+('2e000013-0000-0000-0000-000000000001','evt-sc-oh-013','ebuzima',
  'org.openphc.cce.observation','1.0','260225-0003-3001',
  NOW()-INTERVAL '2 days' + INTERVAL '3 seconds','application/fhir+json','FAC-0003','corr-sc-013',
  '{"resourceType":"Observation","id":"obs-sc-013","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"55284-4"}]},"subject":{"reference":"Patient/260225-0003-3001"}}'::jsonb,
@@ -1106,28 +1106,28 @@ INSERT INTO step_instance (
 ('51000015-0000-0000-0000-000000000001',
  '01000004-0000-0000-0000-000000000001','epi-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '160 days',NOW()-INTERVAL '153 days',NULL,
- NOW()-INTERVAL '160 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '160 days','ebuzima','ON_TIME',
  'e1000012-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '160 days',NOW()-INTERVAL '160 days'),
 
 ('51000016-0000-0000-0000-000000000001',
  '01000004-0000-0000-0000-000000000001','epi-opv0',0,'COMPLETED',
  NOW()-INTERVAL '160 days',NOW()-INTERVAL '146 days',NULL,
- NOW()-INTERVAL '118 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '118 days','ebuzima','LATE',
  'e1000013-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '160 days',NOW()-INTERVAL '118 days'),
 
 ('51000017-0000-0000-0000-000000000001',
  '01000004-0000-0000-0000-000000000001','epi-penta1',0,'COMPLETED',
  NOW()-INTERVAL '118 days',NOW()-INTERVAL '111 days',NULL,
- NOW()-INTERVAL '76 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '76 days','ebuzima','LATE',
  'e1000014-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '118 days',NOW()-INTERVAL '76 days'),
 
 ('51000018-0000-0000-0000-000000000001',
  '01000004-0000-0000-0000-000000000001','epi-penta2',0,'COMPLETED',
  NOW()-INTERVAL '76 days',NOW()-INTERVAL '69 days',NULL,
- NOW()-INTERVAL '34 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '34 days','ebuzima','LATE',
  'e1000015-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '76 days',NOW()-INTERVAL '34 days'),
 
@@ -1141,14 +1141,14 @@ INSERT INTO step_instance (
 ('51000020-0000-0000-0000-000000000001',
  '01000005-0000-0000-0000-000000000001','epi-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '150 days',NOW()-INTERVAL '143 days',NULL,
- NOW()-INTERVAL '150 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '150 days','ebuzima','ON_TIME',
  'e1000016-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '150 days',NOW()-INTERVAL '150 days'),
 
 ('51000021-0000-0000-0000-000000000001',
  '01000005-0000-0000-0000-000000000001','epi-opv0',0,'COMPLETED',
  NOW()-INTERVAL '150 days',NOW()-INTERVAL '136 days',NULL,
- NOW()-INTERVAL '108 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '108 days','ebuzima','LATE',
  'e1000017-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '150 days',NOW()-INTERVAL '108 days'),
 
@@ -1168,14 +1168,14 @@ INSERT INTO step_instance (
 ('51000024-0000-0000-0000-000000000001',
  '01000006-0000-0000-0000-000000000001','htn-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '140 days',NOW()-INTERVAL '133 days',NULL,
- NOW()-INTERVAL '140 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '140 days','ebuzima','ON_TIME',
  'e1000018-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '140 days',NOW()-INTERVAL '140 days'),
 
 ('51000025-0000-0000-0000-000000000001',
  '01000006-0000-0000-0000-000000000001','htn-followup-1',0,'COMPLETED',
  NOW()-INTERVAL '110 days',NOW()-INTERVAL '103 days',NULL,
- NOW()-INTERVAL '98 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '98 days','ebuzima','LATE',
  'e1000019-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '110 days',NOW()-INTERVAL '98 days'),
 
@@ -1205,21 +1205,21 @@ INSERT INTO step_instance (
 ('51000029-0000-0000-0000-000000000001',
  '01000007-0000-0000-0000-000000000001','anc-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '145 days',NOW()-INTERVAL '138 days',NULL,
- NOW()-INTERVAL '145 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '145 days','ebuzima','ON_TIME',
  'e1000022-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '145 days',NOW()-INTERVAL '145 days'),
 
 ('51000030-0000-0000-0000-000000000001',
  '01000007-0000-0000-0000-000000000001','anc-visit-1',0,'COMPLETED',
  NOW()-INTERVAL '89 days',NOW()-INTERVAL '82 days',NULL,
- NOW()-INTERVAL '103 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '103 days','ebuzima','LATE',
  'e1000023-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '89 days',NOW()-INTERVAL '103 days'),
 
 ('51000031-0000-0000-0000-000000000001',
  '01000007-0000-0000-0000-000000000001','anc-visit-2',0,'COMPLETED',
  NOW()-INTERVAL '57 days',NOW()-INTERVAL '50 days',NULL,
- NOW()-INTERVAL '61 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '61 days','ebuzima','LATE',
  'e1000024-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '89 days',NOW()-INTERVAL '61 days'),
 
@@ -1234,7 +1234,7 @@ INSERT INTO step_instance (
 ('51000033-0000-0000-0000-000000000001',
  '01000008-0000-0000-0000-000000000001','anc-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '138 days',NOW()-INTERVAL '131 days',NULL,
- NOW()-INTERVAL '138 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '138 days','ebuzima','ON_TIME',
  'e1000025-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '138 days',NOW()-INTERVAL '138 days'),
 
@@ -1260,14 +1260,14 @@ INSERT INTO step_instance (
 ('51000037-0000-0000-0000-000000000001',
  '01000009-0000-0000-0000-000000000001','epi-enrollment',0,'COMPLETED',
  NOW()-INTERVAL '130 days',NOW()-INTERVAL '123 days',NULL,
- NOW()-INTERVAL '130 days','ebuzima-openhim','ON_TIME',
+ NOW()-INTERVAL '130 days','ebuzima','ON_TIME',
  'e1000026-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '130 days',NOW()-INTERVAL '130 days'),
 
 ('51000038-0000-0000-0000-000000000001',
  '01000009-0000-0000-0000-000000000001','epi-opv0',0,'COMPLETED',
  NOW()-INTERVAL '130 days',NOW()-INTERVAL '116 days',NULL,
- NOW()-INTERVAL '3 days','ebuzima-openhim','LATE',
+ NOW()-INTERVAL '3 days','ebuzima','LATE',
  'e1000027-0000-0000-0000-000000000001','must',
  NOW()-INTERVAL '130 days',NOW()-INTERVAL '3 days'),
 
@@ -1550,7 +1550,7 @@ INSERT INTO event_log (
  '51000011-0000-0000-0000-000000000001'),
 
 -- openhim P01 visit from FAC-0002 → ZERO_MATCH (same patient, different facility, duplicate content)
-('e1000009-0000-0000-0000-000000000001','evt-eb-oh-0001','ebuzima-openhim','src-oh-1001',
+('e1000009-0000-0000-0000-000000000001','evt-eb-oh-0001','ebuzima','src-oh-1001',
  '260225-0001-1001','org.openphc.cce.encounter',
  NOW()-INTERVAL '175 days',NOW()-INTERVAL '175 days','corr-oh-000001',
  '{"resourceType":"Encounter","id":"enc-p01-v1-oh","status":"finished",
@@ -1561,7 +1561,7 @@ INSERT INTO event_log (
  NULL),
 
 -- openhim P01 visit-4 (only in openhim, ZERO_MATCH — no step pending)
-('e1000010-0000-0000-0000-000000000001','evt-eb-oh-0002','ebuzima-openhim','src-oh-1002',
+('e1000010-0000-0000-0000-000000000001','evt-eb-oh-0002','ebuzima','src-oh-1002',
  '260225-0001-1001','org.openphc.cce.encounter',
  NOW()-INTERVAL '49 days',NOW()-INTERVAL '49 days','corr-oh-000002',
  '{"resourceType":"Encounter","id":"enc-p01-v4-oh","status":"finished",
@@ -1570,7 +1570,7 @@ INSERT INTO event_log (
  NULL,NULL,NULL,'FAC-0002','ZERO_MATCH',NULL),
 
 -- P02 openhim MATCHED (enrollment duplicate)
-('e1000011-0000-0000-0000-000000000001','evt-eb-oh-0003','ebuzima-openhim','src-oh-2001',
+('e1000011-0000-0000-0000-000000000001','evt-eb-oh-0003','ebuzima','src-oh-2001',
  '260225-0001-1002','org.openphc.cce.encounter',
  NOW()-INTERVAL '168 days',NOW()-INTERVAL '168 days','corr-oh-000003',
  '{"resourceType":"Encounter","id":"enc-p02-v1-oh","status":"finished",
@@ -1580,7 +1580,7 @@ INSERT INTO event_log (
  'anc-enrollment','FAC-0002','DUPLICATE',NULL),
 
 -- P04 EPI enrollment
-('e1000012-0000-0000-0000-000000000001','evt-eb-oh-0004','ebuzima-openhim','src-oh-4001',
+('e1000012-0000-0000-0000-000000000001','evt-eb-oh-0004','ebuzima','src-oh-4001',
  '260225-0002-2001','org.openphc.cce.immunization',
  NOW()-INTERVAL '160 days',NOW()-INTERVAL '160 days','corr-oh-000004',
  '{"resourceType":"Immunization","id":"imm-p04-bcg","status":"completed",
@@ -1591,7 +1591,7 @@ INSERT INTO event_log (
  '51000015-0000-0000-0000-000000000001'),
 
 -- P04 OPV0
-('e1000013-0000-0000-0000-000000000001','evt-eb-oh-0005','ebuzima-openhim','src-oh-4002',
+('e1000013-0000-0000-0000-000000000001','evt-eb-oh-0005','ebuzima','src-oh-4002',
  '260225-0002-2001','org.openphc.cce.immunization',
  NOW()-INTERVAL '118 days',NOW()-INTERVAL '118 days','corr-oh-000005',
  '{"resourceType":"Immunization","id":"imm-p04-opv0","status":"completed",
@@ -1602,7 +1602,7 @@ INSERT INTO event_log (
  '51000016-0000-0000-0000-000000000001'),
 
 -- P04 Penta1
-('e1000014-0000-0000-0000-000000000001','evt-eb-oh-0006','ebuzima-openhim','src-oh-4003',
+('e1000014-0000-0000-0000-000000000001','evt-eb-oh-0006','ebuzima','src-oh-4003',
  '260225-0002-2001','org.openphc.cce.immunization',
  NOW()-INTERVAL '76 days',NOW()-INTERVAL '76 days','corr-oh-000006',
  '{"resourceType":"Immunization","id":"imm-p04-penta1","status":"completed",
@@ -1613,7 +1613,7 @@ INSERT INTO event_log (
  '51000017-0000-0000-0000-000000000001'),
 
 -- P04 Penta2
-('e1000015-0000-0000-0000-000000000001','evt-eb-oh-0061','ebuzima-openhim','src-oh-4004',
+('e1000015-0000-0000-0000-000000000001','evt-eb-oh-0061','ebuzima','src-oh-4004',
  '260225-0002-2001','org.openphc.cce.immunization',
  NOW()-INTERVAL '34 days',NOW()-INTERVAL '34 days','corr-oh-034001',
  '{"resourceType":"Immunization","id":"imm-p04-penta2","status":"completed",
@@ -1624,7 +1624,7 @@ INSERT INTO event_log (
  '51000018-0000-0000-0000-000000000001'),
 
 -- P05 BCG
-('e1000016-0000-0000-0000-000000000001','evt-eb-oh-0007','ebuzima-openhim','src-oh-5001',
+('e1000016-0000-0000-0000-000000000001','evt-eb-oh-0007','ebuzima','src-oh-5001',
  '260225-0002-2002','org.openphc.cce.immunization',
  NOW()-INTERVAL '150 days',NOW()-INTERVAL '150 days','corr-oh-000007',
  '{"resourceType":"Immunization","id":"imm-p05-bcg","status":"completed",
@@ -1635,7 +1635,7 @@ INSERT INTO event_log (
  '51000020-0000-0000-0000-000000000001'),
 
 -- P05 OPV0
-('e1000017-0000-0000-0000-000000000001','evt-eb-oh-0062','ebuzima-openhim','src-oh-5002',
+('e1000017-0000-0000-0000-000000000001','evt-eb-oh-0062','ebuzima','src-oh-5002',
  '260225-0002-2002','org.openphc.cce.immunization',
  NOW()-INTERVAL '108 days',NOW()-INTERVAL '108 days','corr-oh-108001',
  '{"resourceType":"Immunization","id":"imm-p05-opv0","status":"completed",
@@ -1646,7 +1646,7 @@ INSERT INTO event_log (
  '51000021-0000-0000-0000-000000000001'),
 
 -- P06 HTN enrollment
-('e1000018-0000-0000-0000-000000000001','evt-eb-oh-0008','ebuzima-openhim','src-oh-6001',
+('e1000018-0000-0000-0000-000000000001','evt-eb-oh-0008','ebuzima','src-oh-6001',
  '260225-0003-3001','org.openphc.cce.encounter',
  NOW()-INTERVAL '140 days',NOW()-INTERVAL '140 days','corr-oh-000008',
  '{"resourceType":"Encounter","id":"enc-p06-htn1","status":"finished",
@@ -1657,7 +1657,7 @@ INSERT INTO event_log (
  '51000024-0000-0000-0000-000000000001'),
 
 -- P06 HTN followup-1
-('e1000019-0000-0000-0000-000000000001','evt-eb-oh-0010','ebuzima-openhim','src-oh-6003',
+('e1000019-0000-0000-0000-000000000001','evt-eb-oh-0010','ebuzima','src-oh-6003',
  '260225-0003-3001','org.openphc.cce.encounter',
  NOW()-INTERVAL '98 days',NOW()-INTERVAL '98 days','corr-oh-000010',
  '{"resourceType":"Encounter","id":"enc-p06-htn2","status":"finished",
@@ -1691,7 +1691,7 @@ INSERT INTO event_log (
  '51000027-0000-0000-0000-000000000001'),
 
 -- P07 enrollment (openhim only)
-('e1000022-0000-0000-0000-000000000001','evt-eb-oh-0011','ebuzima-openhim','src-oh-7001',
+('e1000022-0000-0000-0000-000000000001','evt-eb-oh-0011','ebuzima','src-oh-7001',
  '260225-0003-3002','org.openphc.cce.encounter',
  NOW()-INTERVAL '145 days',NOW()-INTERVAL '145 days','corr-oh-000011',
  '{"resourceType":"Encounter","id":"enc-p07-anc1","status":"finished",
@@ -1702,7 +1702,7 @@ INSERT INTO event_log (
  '51000029-0000-0000-0000-000000000001'),
 
 -- P07 ANC visit-1
-('e1000023-0000-0000-0000-000000000001','evt-eb-oh-0012','ebuzima-openhim','src-oh-7002',
+('e1000023-0000-0000-0000-000000000001','evt-eb-oh-0012','ebuzima','src-oh-7002',
  '260225-0003-3002','org.openphc.cce.encounter',
  NOW()-INTERVAL '103 days',NOW()-INTERVAL '103 days','corr-oh-000012',
  '{"resourceType":"Encounter","id":"enc-p07-anc2","status":"finished",
@@ -1713,7 +1713,7 @@ INSERT INTO event_log (
  '51000030-0000-0000-0000-000000000001'),
 
 -- P07 ANC visit-2
-('e1000024-0000-0000-0000-000000000001','evt-eb-oh-0060','ebuzima-openhim','src-oh-7003',
+('e1000024-0000-0000-0000-000000000001','evt-eb-oh-0060','ebuzima','src-oh-7003',
  '260225-0003-3002','org.openphc.cce.encounter',
  NOW()-INTERVAL '61 days',NOW()-INTERVAL '61 days','corr-oh-061001',
  '{"resourceType":"Encounter","id":"enc-p07-anc3","status":"finished",
@@ -1724,7 +1724,7 @@ INSERT INTO event_log (
  '51000031-0000-0000-0000-000000000001'),
 
 -- P08 enrollment (openhim only)
-('e1000025-0000-0000-0000-000000000001','evt-eb-oh-0013','ebuzima-openhim','src-oh-8001',
+('e1000025-0000-0000-0000-000000000001','evt-eb-oh-0013','ebuzima','src-oh-8001',
  '260225-0003-3003','org.openphc.cce.encounter',
  NOW()-INTERVAL '138 days',NOW()-INTERVAL '138 days','corr-oh-000013',
  '{"resourceType":"Encounter","id":"enc-p08-anc1","status":"finished",
@@ -1735,7 +1735,7 @@ INSERT INTO event_log (
  '51000033-0000-0000-0000-000000000001'),
 
 -- P09 EPI enrollment (openhim only)
-('e1000026-0000-0000-0000-000000000001','evt-eb-oh-0014','ebuzima-openhim','src-oh-9001',
+('e1000026-0000-0000-0000-000000000001','evt-eb-oh-0014','ebuzima','src-oh-9001',
  '260225-0004-4001','org.openphc.cce.immunization',
  NOW()-INTERVAL '130 days',NOW()-INTERVAL '130 days','corr-oh-000014',
  '{"resourceType":"Immunization","id":"imm-p09-bcg","status":"completed",
@@ -1746,7 +1746,7 @@ INSERT INTO event_log (
  '51000037-0000-0000-0000-000000000001'),
 
 -- P09 OPV0 (recent, via openhim)
-('e1000027-0000-0000-0000-000000000001','evt-eb-oh-1001','ebuzima-openhim','src-oh-9002',
+('e1000027-0000-0000-0000-000000000001','evt-eb-oh-1001','ebuzima','src-oh-9002',
  '260225-0004-4001','org.openphc.cce.immunization',
  NOW()-INTERVAL '3 days',NOW()-INTERVAL '3 days','corr-oh-1001',
  '{"resourceType":"Immunization","id":"imm-p09-opv0","status":"completed",
@@ -1824,7 +1824,7 @@ INSERT INTO event_log (
  '51000010-0000-0000-0000-000000000001'),
 
 -- Orphan ZERO_MATCH event (openhim BP with no matching protocol step)
-('e1000034-0000-0000-0000-000000000001','evt-eb-oh-0009','ebuzima-openhim','src-oh-6002',
+('e1000034-0000-0000-0000-000000000001','evt-eb-oh-0009','ebuzima','src-oh-6002',
  '260225-0003-3001','org.openphc.cce.observation',
  NOW()-INTERVAL '140 days',NOW()-INTERVAL '140 days','corr-oh-000009',
  '{"resourceType":"Observation","id":"obs-p06-bp1","status":"final",
@@ -1907,14 +1907,14 @@ INSERT INTO audit_log (
  'COMPLIANCE','STEP_COMPLETED','SYSTEM',
  'StepInstance','51000015-0000-0000-0000-000000000001',
  '{"protocolInstanceId":"pi000004-0000-0000-0000-000000000001","actionId":"epi-enrollment",
-   "completionStatus":"ON_TIME","completedBySource":"ebuzima-openhim"}'::jsonb,
+   "completionStatus":"ON_TIME","completedBySource":"ebuzima"}'::jsonb,
  NULL, NOW()-INTERVAL '160 days'),
 
 ('a1000010-0000-0000-0000-000000000001',
  'COMPLIANCE','STEP_COMPLETED','SYSTEM',
  'StepInstance','51000024-0000-0000-0000-000000000001',
  '{"protocolInstanceId":"pi000006-0000-0000-0000-000000000001","actionId":"htn-enrollment",
-   "completionStatus":"ON_TIME","completedBySource":"ebuzima-openhim"}'::jsonb,
+   "completionStatus":"ON_TIME","completedBySource":"ebuzima"}'::jsonb,
  NULL, NOW()-INTERVAL '140 days'),
 
 -- Deviation detection audit entries
@@ -2123,8 +2123,8 @@ INSERT INTO inbound_event (
    "participant":[{"individual":{"reference":"Practitioner/prac-001","display":"Dr. Mwila Banda"}}]}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '140 days'),
 
--- ebuzima-openhim events (present in openhim, absent in direct → source gap)
-('1e000045-0000-0000-0000-000000000001','evt-eb-oh-2001','ebuzima-openhim',
+-- ebuzima events (present in openhim, absent in direct → source gap)
+('1e000045-0000-0000-0000-000000000001','evt-eb-oh-2001','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3002',
  NOW()-INTERVAL '80 days','application/fhir+json','FAC-0003',
  'corr-oh-v001','src-oh-v001',
@@ -2133,7 +2133,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0003-3002"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '80 days'),
 
-('1e000046-0000-0000-0000-000000000001','evt-eb-oh-2002','ebuzima-openhim',
+('1e000046-0000-0000-0000-000000000001','evt-eb-oh-2002','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3003',
  NOW()-INTERVAL '100 days','application/fhir+json','FAC-0003',
  'corr-oh-v002','src-oh-v002',
@@ -2173,7 +2173,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '42 days'),
 
 -- More openhim-only immunization (P09 continues EPI schedule)
-('1e000050-0000-0000-0000-000000000001','evt-eb-oh-2003','ebuzima-openhim',
+('1e000050-0000-0000-0000-000000000001','evt-eb-oh-2003','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0004-4001',
  NOW()-INTERVAL '88 days','application/fhir+json','FAC-0004',
  'corr-oh-v003','src-oh-v003',
@@ -2183,7 +2183,7 @@ INSERT INTO inbound_event (
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '88 days'),
 
 -- DESERIALIZATION rejection (openhim) — new rejection reason for ingestion pipeline variety
-('1e000051-0000-0000-0000-000000000001','evt-eb-oh-2004','ebuzima-openhim',
+('1e000051-0000-0000-0000-000000000001','evt-eb-oh-2004','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0002-2001',
  NOW()-INTERVAL '45 days','application/fhir+json','FAC-0002',
  'corr-oh-v004','src-oh-v004',
@@ -2212,7 +2212,7 @@ INSERT INTO inbound_event (
    "subject":{"reference":"Patient/260225-0001-1001"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '12 days'),
 
-('1e000054-0000-0000-0000-000000000001','evt-eb-oh-2005','ebuzima-openhim',
+('1e000054-0000-0000-0000-000000000001','evt-eb-oh-2005','ebuzima',
  'org.openphc.cce.encounter','1.0','260225-0003-3001',
  NOW()-INTERVAL '10 days','application/fhir+json','FAC-0003',
  'corr-oh-v005','src-oh-v005',
@@ -2231,7 +2231,7 @@ INSERT INTO inbound_event (
    "valueQuantity":{"value":132,"unit":"mmHg"}}'::jsonb,
  'ACCEPTED',NULL,NULL, NOW()-INTERVAL '10 days'),
 
-('1e000056-0000-0000-0000-000000000001','evt-eb-oh-2006','ebuzima-openhim',
+('1e000056-0000-0000-0000-000000000001','evt-eb-oh-2006','ebuzima',
  'org.openphc.cce.immunization','1.0','260225-0002-2001',
  NOW()-INTERVAL '7 days','application/fhir+json','FAC-0002',
  'corr-oh-v006','src-oh-v006',
@@ -2319,7 +2319,7 @@ INSERT INTO event_log (
  'htn-bp-check','FAC-0003','MATCHED',NULL),
 
 -- P09 EPI penta1 (openhim)
-('e1000039-0000-0000-0000-000000000001','evt-eb-oh-2003','ebuzima-openhim','src-oh-v003',
+('e1000039-0000-0000-0000-000000000001','evt-eb-oh-2003','ebuzima','src-oh-v003',
  '260225-0004-4001','org.openphc.cce.immunization',
  NOW()-INTERVAL '88 days',NOW()-INTERVAL '88 days','corr-oh-v003',
  '{"resourceType":"Immunization","id":"imm-p09-penta1","status":"completed",
@@ -2349,7 +2349,7 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 -- Summary inserted:
 --   COLLECTOR  inbound_event       : 58 records (42 original + 16 volume/trend)
---              Sources             : ebuzima-direct (28), ebuzima-openhim (30)
+--              Sources             : ebuzima-direct (28), ebuzima (30)
 --              Statuses            : ACCEPTED(46), REJECTED(7), DUPLICATE(2)
 --              Rejection reasons   : INVALID_FHIR, MISSING_SUBJECT, INVALID_ENVELOPE,
 --                                   UNSUPPORTED_CONTENT_TYPE, DESERIALIZATION, PAYLOAD_TOO_LARGE
