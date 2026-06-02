@@ -2,10 +2,11 @@
 
 **Epic:** CCE Insights Service — Compliance Analytics & Dashboards  
 **Component:** `cce-insights-service`  
-**Sprint Target:** Release 1.0.0  
+**Sprint Target:** Release 1.1.0 (demo-intelligence)  
 **Total Subtasks:** 16  
 **Total Story Points:** 68  
-**Total Endpoints:** 38  
+**Total Endpoints:** 37 (14 controllers)  
+**Status:** All subtasks completed and merged
 
 > Each subtask is a single PR-able unit. Execute in listed order — each depends on the prior one being merged. Subtasks S4–S9 can be parallelized after S3 is merged.
 

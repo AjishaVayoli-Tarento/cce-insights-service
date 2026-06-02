@@ -840,19 +840,26 @@ The Compliance Subsystem is the set of services responsible for ingesting care e
 
 #### 7.2.4 Analytics Service
 
-Serves compliance analytics data — protocol adherence rates, deviation trends, facility-level summaries, and patient-level compliance timelines.
+Serves compliance analytics data — protocol adherence rates, deviation trends, facility-level summaries, patient-level compliance timelines, event volume metrics, ingestion pipeline monitoring, intelligence delivery tracking, and practitioner/facility rankings.
+
+**Implementation:** `cce-insights-service` — Spring Boot 3.4.4, Java 21, 37 GET endpoints across 14 controllers.
 
 **Key capabilities:**
 - Protocol adherence — % of patients completing all steps within defined windows
-- Deviation analysis — Most common deviations, average delay, deviation trends over time
-- Facility-level dashboards — Compliance summary per facility or geographic region
+- Deviation analysis — Most common deviations, average delay, deviation trends over time, resolution rate
+- Facility-level dashboards — Compliance summary per facility or geographic region, facility ranking
+- Practitioner analytics — Compliance rate and deviation counts by practitioner
 - Patient timeline — Full compliance timeline for a specific patient across all enrolled protocols
+- Intelligence delivery — Tracking of fire-event actions, escalation notifications, delivery status
+- Event volume — Clinical event counts by resource type, facility, practitioner, source system
+- Ingestion pipeline — Acceptance/rejection funnels, source quality scores, pipeline loss detection
+- Protocol action order — Ordered list of actions with type classification (fire-event for intelligence)
 - Export — CSV, JSON for external analysis
 
 | Phase | Data Source | Trade-off |
 |---|---|---|
-| Phase 1 | Compliance DB (direct) | Simpler deployment; acceptable at low-to-moderate scale |
-| Phase 2 | Dedicated Analytics DB | Query performance at scale; eventual consistency with Compliance DB |
+| Phase 1 (current) | Compliance DB (direct) + Caffeine in-memory caching | Simpler deployment; acceptable at low-to-moderate scale |
+| Phase 2 | Dedicated Analytics DB + Redis distributed caching | Query performance at scale; eventual consistency with Compliance DB |
 
 #### 7.2.5 Analytics UI Service
 
@@ -883,10 +890,25 @@ POST /v1/events                                  → Collector Service
 /v1/protocol-instances/*                         → Compliance Service
 /v1/patients/*/protocol-tracking/*               → Compliance Service
 /v1/patients/*/events                            → Compliance Service
-/v1/protocols/*/compliance-summary               → Analytics Service
-/v1/facilities/*/compliance-summary              → Analytics Service
-/v1/protocols/*/patients                         → Analytics Service
-/v1/intelligence/summary                         → Analytics Service
+/v1/insights/protocols/compliance-summary        → Analytics Service
+/v1/insights/protocols/*/compliance-summary      → Analytics Service
+/v1/insights/facilities/*/compliance-summary     → Analytics Service
+/v1/insights/protocols/*/patients                → Analytics Service
+/v1/insights/protocols/*/action-order            → Analytics Service
+/v1/insights/protocols/*/step-analytics          → Analytics Service
+/v1/insights/protocols/*/completion-funnel       → Analytics Service
+/v1/insights/protocols/*/outcome-distribution    → Analytics Service
+/v1/insights/protocols/*/enrollment-trends       → Analytics Service
+/v1/insights/dashboard/*                         → Analytics Service
+/v1/insights/deviations/*                        → Analytics Service
+/v1/insights/intelligence/summary                → Analytics Service
+/v1/insights/events/*                            → Analytics Service
+/v1/insights/facilities/ranking                  → Analytics Service
+/v1/insights/practitioners/ranking               → Analytics Service
+/v1/insights/patients/*                          → Analytics Service
+/v1/insights/ingestion/*                         → Analytics Service
+/v1/insights/lookups/*                           → Analytics Service
+/v1/insights/exports/*                           → Analytics Service
 /v1/action-definitions/*                         → Compliance Service (provisional)
 /v1/action-runs/*                                → Compliance Service (provisional)
 ```
