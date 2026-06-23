@@ -599,3 +599,177 @@ S0 (Docs)
 | S15 Deployment & Containerization | 5 | — |
 | S16 Lookups, Caching & Optimization | 3 | 6 |
 | **Total** | **66** | **38** |
+
+---
+
+## Known Issues
+
+### GAP-01: `inbound_event_logs` MATERIALIZED columns expect CloudEvents format; collector service stores raw FHIR
+
+**Affected pages:** Practitioners Analytics (all zeros), Facilities Analytics (empty), Compliance Overview facility filter returns nothing, Events by-practitioner/by-facility (empty), Dashboard facility counts, facility display names not resolved
+
+**Root cause:**
+
+The `inbound_event_logs` ClickHouse table defines several MATERIALIZED columns that extract fields from `raw_payload` using **CloudEvents envelope format**. The collector service stores raw FHIR resources directly as `raw_payload` (by design — cannot change). This mismatch means all MATERIALIZED columns silently return `''`.
+
+| Column | Expected path (CloudEvents) | Actual path in raw FHIR |
+|---|---|---|
+| `subject` | `raw_payload.subject` → plain string `"0261234567890"` | `raw_payload.subject.reference` → `"Patient/0261234567890"` (nested object) |
+| `event_type` | `raw_payload.type` → `"Encounter"` | `raw_payload.resourceType` → `"Encounter"` |
+| `facility_id` | `raw_payload.facilityid` → plain string | `raw_payload.location[0].location.reference` or `raw_payload.locationReference[0].reference` → `"Location/0234"` |
+| `resource_type` | `raw_payload.data.resourceType` | `raw_payload.resourceType` |
+| `practitioner_ref` | `raw_payload.data.practitionerRef` → plain string | `raw_payload.participant[n].individual.reference` (Encounter) or `raw_payload.performer[n].reference` (ServiceRequest) |
+| `practitioner_display` | `raw_payload.data.practitionerDisplay` → plain string | `raw_payload.participant[n].individual.display` or `raw_payload.performer[n].display` |
+
+**Impact:**
+- `subject = ''` + `facility_id = ''` → `findPatientsByFacility` JOIN (`pi.patient_id = iel.subject`) returns 0 rows → Compliance Overview facility filter eliminates all protocol instances
+- `facility_id = ''` → facility ranking, event counts by facility, `dict_patient_facility` dictionary all empty
+- `practitioner_ref = ''` → Practitioners page shows all zeros
+- `event_type = ''` / `resource_type = ''` → event type grouping shows no breakdown; `findFacilityNames` UNION filter matches no rows → facility display names fall back to IDs
+
+**Cascading fix already applied in insights-service:**
+`ComplianceEventLogRepositoryImpl.findFacilityNames()` has been updated to read display names from both Encounter (`location[0].location.display`) and ServiceRequest (`locationReference[0].display`) via a UNION query. This activates automatically once GAP-01 is fixed and `resource_type` / `facility_id` columns are non-empty.
+
+**Fix required in data-pipeline (`cce-data-pipeline/schema/01-create-tables.sql`):**
+
+Update the MATERIALIZED column expressions to parse FHIR paths directly from `raw_payload`:
+
+```sql
+-- Current (wrong — CloudEvents format):
+subject              String MATERIALIZED JSONExtractString(raw_payload, 'subject'),
+event_type           String MATERIALIZED JSONExtractString(raw_payload, 'type'),
+facility_id          String MATERIALIZED JSONExtractString(raw_payload, 'facilityid'),
+resource_type        String MATERIALIZED JSONExtractString(JSONExtractRaw(raw_payload, 'data'), 'resourceType'),
+practitioner_ref     String MATERIALIZED JSONExtractString(JSONExtractRaw(raw_payload, 'data'), 'practitionerRef'),
+practitioner_display String MATERIALIZED JSONExtractString(JSONExtractRaw(raw_payload, 'data'), 'practitionerDisplay'),
+
+-- Corrected (FHIR format):
+subject String MATERIALIZED
+  replaceOne(
+    JSONExtractString(JSONExtractRaw(raw_payload, 'subject'), 'reference'),
+    'Patient/', ''
+  ),
+
+event_type String MATERIALIZED
+  JSONExtractString(raw_payload, 'resourceType'),
+
+resource_type String MATERIALIZED
+  JSONExtractString(raw_payload, 'resourceType'),
+
+facility_id String MATERIALIZED
+  replaceOne(
+    if(
+      notEmpty(JSONExtractArrayRaw(raw_payload, 'location')),
+      JSONExtractString(JSONExtractRaw(arrayElement(JSONExtractArrayRaw(raw_payload, 'location'), 1), 'location'), 'reference'),
+      JSONExtractString(arrayElement(JSONExtractArrayRaw(raw_payload, 'locationReference'), 1), 'reference')
+    ),
+    'Location/', ''
+  ),
+
+practitioner_ref String MATERIALIZED
+  replaceOne(
+    arrayFirst(x -> startsWith(x, 'Practitioner/'),
+      arrayMap(x -> JSONExtractString(JSONExtractRaw(x, 'individual'), 'reference'),
+               JSONExtractArrayRaw(raw_payload, 'participant'))
+    ) ||
+    arrayFirst(x -> startsWith(x, 'Practitioner/'),
+      JSONExtractArrayRaw(raw_payload, 'performer')
+    ),
+    'Practitioner/', ''
+  ),
+
+practitioner_display String MATERIALIZED
+  arrayFirst(x -> x != '',
+    arrayMap(x ->
+      if(startsWith(JSONExtractString(JSONExtractRaw(x, 'individual'), 'reference'), 'Practitioner/'),
+         JSONExtractString(JSONExtractRaw(x, 'individual'), 'display'), ''),
+      JSONExtractArrayRaw(raw_payload, 'participant'))
+  ),
+```
+
+**Field extraction rules per FHIR resource type:**
+
+| Column | Encounter | ServiceRequest | RelatedPerson / Patient |
+|---|---|---|---|
+| `subject` | strip `Patient/` from `subject.reference` | strip `Patient/` from `subject.reference` | strip `Patient/` from `patient.reference` |
+| `event_type` / `resource_type` | `"Encounter"` | `"ServiceRequest"` | `"RelatedPerson"` / `"Patient"` |
+| `facility_id` | strip `Location/` from `location[0].location.reference` | strip `Location/` from `locationReference[0].reference` | `""` |
+| `practitioner_ref` | `participant[n].individual.reference` starting with `Practitioner/` | `performer[n].reference` starting with `Practitioner/` | `""` |
+| `practitioner_display` | same participant entry `individual.display` | same performer entry `display` | `""` |
+
+**After updating `01-create-tables.sql`, apply to live ClickHouse:**
+```sql
+ALTER TABLE inbound_event_logs MODIFY COLUMN subject              String MATERIALIZED <new_expr>;
+ALTER TABLE inbound_event_logs MODIFY COLUMN event_type           String MATERIALIZED <new_expr>;![alt text](image.png)
+ALTER TABLE inbound_event_logs MODIFY COLUMN resource_type        String MATERIALIZED <new_expr>;
+ALTER TABLE inbound_event_logs MODIFY COLUMN facility_id          String MATERIALIZED <new_expr>;
+ALTER TABLE inbound_event_logs MODIFY COLUMN practitioner_ref     String MATERIALIZED <new_expr>;
+ALTER TABLE inbound_event_logs MODIFY COLUMN practitioner_display String MATERIALIZED <new_expr>;
+
+-- Recompute existing rows (background mutation)
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN subject;
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN event_type;
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN resource_type;
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN facility_id;
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN practitioner_ref;
+ALTER TABLE inbound_event_logs MATERIALIZE COLUMN practitioner_display;
+```
+
+**No changes needed in:** the insights-service Java code (beyond the `findFacilityNames` fix already applied) or the Kafka ingestion MV (`02-kafka-ingestion.sql`).
+
+---
+
+### GAP-02: Dashboard source filter hardcoded to E-Buzima; SPICE events not counted
+
+**Affected metrics:** "Tracked Cohort (E-Buzima)", "Patients Received via HIE", "HIE Event Count" in the dashboard overview — all show 0
+
+**Root cause:**
+
+`DashboardService.getOverview()` filters `inbound_event_logs` by hardcoded source names:
+- `source = 'ebuzima-direct'` → `totalPatientsEBuzima`
+- `source = 'ebuzima'` → `patientsReceivedHIE` and `hieEventCount`
+
+All events in `inbound_event_logs` currently have `source = 'spice'` (resolved by the openhim-emitter from the SPICE client ID). Both counts return 0.
+
+**Option A — Fix in the openhim-emitter:**
+
+Configure the openhim-emitter's `application.yml` so the SPICE client resolves to `"ebuzima"` or `"ebuzima-direct"` as appropriate, matching what `DashboardService` expects. The emitter's `SourceAdaptorService.resolveSource()` maps `X-OpenHIM-ClientID` headers to source keys — updating those mappings requires no code change, only configuration.
+
+**Option B — Fix in the insights-service (configurable sources):**
+
+Make the source identifiers configurable so the dashboard works with any active source system.
+
+1. Add to `src/main/resources/application.yml`:
+```yaml
+cce:
+  insights:
+    sources:
+      hie: ${SOURCE_HIE:ebuzima}
+      emr-direct: ${SOURCE_EMR_DIRECT:ebuzima-direct}
+```
+
+2. Add to `src/main/resources/application-docker.yml`:
+```yaml
+cce:
+  insights:
+    sources:
+      hie: spice
+      emr-direct: spice
+```
+
+3. In `DashboardService.java`, inject via `@Value` and replace hardcoded strings:
+```java
+@Value("${cce.insights.sources.hie:ebuzima}")
+private String hieSource;
+
+@Value("${cce.insights.sources.emr-direct:ebuzima-direct}")
+private String emrDirectSource;
+```
+Use `hieSource` / `emrDirectSource` in place of `"ebuzima"` / `"ebuzima-direct"` across the four `inboundEventRepository` calls in `getOverview()`.
+
+**No changes needed in:** the data-pipeline ClickHouse schema or the cce-insights-ui.
+
+
+
+
+
