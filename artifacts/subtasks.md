@@ -240,10 +240,7 @@ Implement event volume analytics — aggregate counts of clinical events grouped
 - [ ] `GET /v1/insights/events/trends` — time-series event volume with `interval` (daily/weekly/monthly) and resource type breakdown
 - [ ] `GET /v1/insights/events/by-resource-type` — event counts grouped by `data->>'resourceType'` with percentages
 - [ ] `GET /v1/insights/events/by-facility` — event counts per facility with resource type sub-groups, cursor pagination
-- [ ] `GET /v1/insights/events/by-practitioner` — event counts per practitioner via JSONB COALESCE extraction, cursor pagination. Practitioner `display` field is best-effort.
-- [ ] `GET /v1/insights/events/by-source` — event counts per source system with status breakdown (uses inbound_event)
-- [ ] `GET /v1/insights/events/compare-sources` — compare two source systems: overlap, unique events, sample pairs (uses inbound_event)
-- [ ] DTOs: `EventVolumeSummaryDto`, `EventVolumeTrendDto`, `ResourceTypeCountDto`, `FacilityEventCountDto`, `PractitionerEventCountDto`, `SourceSystemCountDto`
+- [ ] DTOs: `EventVolumeSummaryDto`, `EventVolumeTrendDto`, `ResourceTypeCountDto`, `FacilityEventCountDto`
 - [ ] Unit tests for JSONB path extraction logic, percentage calculation, null practitioner handling
 - [ ] MockMvc tests for all 6 endpoints: 200 OK, filters, pagination
 
@@ -254,8 +251,7 @@ Implement event volume analytics — aggregate counts of clinical events grouped
 - `src/main/java/org/openphc/cce/insights/web/dto/EventVolumeTrendDto.java`
 - `src/main/java/org/openphc/cce/insights/web/dto/ResourceTypeCountDto.java`
 - `src/main/java/org/openphc/cce/insights/web/dto/FacilityEventCountDto.java`
-- `src/main/java/org/openphc/cce/insights/web/dto/PractitionerEventCountDto.java`
-- `src/main/java/org/openphc/cce/insights/web/dto/SourceSystemCountDto.java`
+- `src/main/java/org/openphc/cce/insights/web/dto/FacilityEventCountDto.java`
 
 ---
 
@@ -326,24 +322,19 @@ Implement advanced deviation analytics — most-deviated protocol steps (by acti
 **Labels:** `feature`, `api`, `patient-risk`
 
 **Description:**  
-Implement event processing quality monitoring (integration health) and patient risk analytics — at-risk hotspots by facility and repeat deviation patients requiring targeted outreach.
+Implement patient risk analytics — at-risk hotspots by facility and repeat deviation patients requiring targeted outreach.
 
 **Acceptance Criteria:**
-- [ ] `ProcessingQualityService` — MATCHED/ZERO_MATCH/DUPLICATE ratios per source system from `event_log.processing_status`
 - [ ] `PatientRiskService` — patient compliance categorization across all active protocol instances per facility (on_track/at_risk/non_compliant via correlated subqueries on step_instance.state); repeat deviation identification with threshold filter
-- [ ] `GET /v1/insights/events/processing-quality` — per-source breakdown of MATCHED/ZERO_MATCH/DUPLICATE with percentages and overall totals
 - [ ] `GET /v1/insights/patients/at-risk-hotspots` — per-facility concentration of at_risk + non_compliant patients, ordered by non_compliant count DESC, cursor pagination
 - [ ] `GET /v1/insights/patients/repeat-deviations` — patients with `totalDeviations >= minDeviations` (default 3), with overdue/missed counts, affected protocols/steps, recent deviation details, cursor pagination
-- [ ] DTOs: `ProcessingQualityDto`, `AtRiskHotspotDto`, `RepeatDeviationPatientDto`
+- [ ] DTOs: `AtRiskHotspotDto`, `RepeatDeviationPatientDto`
 - [ ] Unit tests for: compliance categorization across multi-protocol patients, minDeviations threshold, percentage edge cases (division by zero)
-- [ ] MockMvc tests for all 3 endpoints: 200 OK, filters, pagination
+- [ ] MockMvc tests for both endpoints: 200 OK, filters, pagination
 
 **Files:**
-- `src/main/java/org/openphc/cce/insights/service/ProcessingQualityService.java`
 - `src/main/java/org/openphc/cce/insights/service/PatientRiskService.java`
-- `src/main/java/org/openphc/cce/insights/web/controller/ProcessingQualityController.java`
 - `src/main/java/org/openphc/cce/insights/web/controller/PatientRiskController.java`
-- `src/main/java/org/openphc/cce/insights/web/dto/ProcessingQualityDto.java`
 - `src/main/java/org/openphc/cce/insights/web/dto/AtRiskHotspotDto.java`
 - `src/main/java/org/openphc/cce/insights/web/dto/RepeatDeviationPatientDto.java`
 
@@ -419,7 +410,6 @@ Full integration test suite using Testcontainers PostgreSQL. Seed compliance sch
   - `EventVolumeControllerIT` — event volume (6 endpoints), JSONB practitioner extraction
   - `ProtocolAnalyticsControllerIT` — step analytics, completion funnel, outcome distribution, enrollment trends
   - `FacilityRankingControllerIT` — ranking with all 3 rankBy options
-  - `ProcessingQualityControllerIT` — per-source processing quality
   - `PatientRiskControllerIT` — at-risk hotspots, repeat deviations
   - `ExportControllerIT` — CSV streaming export
 - [ ] Verify pagination, filtering, edge cases (no data, 1 record, boundary dates)
@@ -441,7 +431,7 @@ Full integration test suite using Testcontainers PostgreSQL. Seed compliance sch
 **Labels:** `feature`, `api`, `ingestion-analytics`
 
 **Description:**  
-Implement ingestion pipeline analytics by querying the `inbound_event` table (owned by the Collector Service). Provides acceptance/rejection funnels, rejection reason analysis, source data quality scores, and pipeline loss tracking (accepted events vs compliance-matched). Also migrates source-level event counts and source comparison to `inbound_event` for complete event visibility.
+Implement ingestion pipeline analytics by querying the `inbound_event` table (owned by the Collector Service). Provides acceptance/rejection funnels, rejection reason analysis, source data quality scores, and pipeline loss tracking (accepted events vs compliance-matched). Also migrates source-level event counts to `inbound_event` for complete event visibility.
 
 **Acceptance Criteria:**
 - [ ] `InboundEvent` entity — maps `inbound_event` table, `@Immutable`, 16 columns including `status`, `rejection_reason`, `error_details`, `raw_payload` (JSONB)
@@ -452,7 +442,7 @@ Implement ingestion pipeline analytics by querying the `inbound_event` table (ow
 - [ ] `GET /v1/insights/ingestion/source-quality` — per-source quality scores (acceptance/rejection/duplicate rates)
 - [ ] `GET /v1/insights/ingestion/pipeline-loss` — accepted events vs compliance-matched, loss rate per source
 - [ ] DTOs: `IngestionFunnelDto`, `RejectionAnalyticsDto`, `SourceDataQualityDto`, `PipelineLossDto`
-- [ ] Migration: `EventVolumeService.getBySource()` and `compareSourceSystems()` now use `InboundEventRepository`
+- [ ] Migration: `EventVolumeService.getBySource()` now uses `InboundEventRepository`
 - [ ] `init-schema.sql` updated with `inbound_event` DDL
 - [ ] `seed-data.sql` updated with sample inbound_event rows
 - [ ] `IngestionAnalyticsControllerIT` integration tests
@@ -488,7 +478,7 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 - [ ] `RELEASE_NOTES.md` — v1.0.0 release with full endpoint inventory, architecture summary, bug fixes, known limitations
 - [ ] `README.md` — rewritten with project overview, quick start, endpoint summary, configuration, project structure
 - [ ] Code optimization: extract `DateUtil` utility, fix `FacilityRankingService` deviation count bug, add missing `logstash-logback-encoder` dependency
-- [ ] All `.md` files updated to reflect 38 endpoints, 6 entities, 10 services + DateUtil, 11 controllers, InboundEvent/IngestionAnalytics/Lookups/Caching additions
+- [ ] All `.md` files updated to reflect 33 endpoints, 6 entities, 10 services + DateUtil, 11 controllers, InboundEvent/IngestionAnalytics/Lookups/Caching additions
 
 **Files:**
 - `Dockerfile`
@@ -523,33 +513,30 @@ Add Docker containerization (multi-stage Dockerfile, docker-compose.yml), deploy
 | 9 | `GET /v1/insights/deviations` | S6 |
 | 10 | `GET /v1/insights/deviations/trends` | S6 |
 | 11 | `GET /v1/insights/intelligence/summary` | S6 |
-| 12 | `GET /v1/insights/events/summary` | S7 |
-| 13 | `GET /v1/insights/events/trends` | S7 |
-| 14 | `GET /v1/insights/events/by-resource-type` | S7 |
-| 15 | `GET /v1/insights/events/by-facility` | S7 |
-| 16 | `GET /v1/insights/events/by-practitioner` | S7 |
-| 17 | `GET /v1/insights/events/by-source` | S7 |
-| 18 | `GET /v1/insights/events/source-comparison` | S7 |
-| 19 | `GET /v1/insights/protocols/{id}/step-analytics` | S8 |
-| 20 | `GET /v1/insights/protocols/{id}/completion-funnel` | S8 |
-| 21 | `GET /v1/insights/protocols/{id}/outcome-distribution` | S8 |
-| 22 | `GET /v1/insights/protocols/{id}/enrollment-trends` | S8 |
-| 23 | `GET /v1/insights/deviations/by-action` | S9 |
-| 24 | `GET /v1/insights/deviations/resolution-rate` | S9 |
-| 25 | `GET /v1/insights/facilities/ranking` | S9 |
-| 26 | `GET /v1/insights/events/processing-quality` | S10 |
-| 27 | `GET /v1/insights/patients/at-risk-hotspots` | S10 |
-| 28 | `GET /v1/insights/patients/repeat-deviations` | S10 |
-| 29 | `GET /v1/insights/exports/compliance-report` | S11 |
-| 30 | `GET /v1/insights/ingestion/funnel` | S14 |
-| 31 | `GET /v1/insights/ingestion/rejections` | S14 |
-| 32 | `GET /v1/insights/ingestion/source-quality` | S14 |
-| 33 | `GET /v1/insights/ingestion/pipeline-loss` | S14 |
-| 34 | `GET /v1/insights/lookups/protocols` | S16 |
-| 35 | `GET /v1/insights/lookups/facilities` | S16 |
-| 36 | `GET /v1/insights/lookups/practitioners` | S16 |
-| 37 | `GET /v1/insights/lookups/sources` | S16 |
-| 38 | `GET /v1/insights/lookups/patients` | S16 |
+| 12 | `GET /v1/insights/events/kpis` | S7 |
+| 13 | `GET /v1/insights/events/summary` | S7 |
+| 14 | `GET /v1/insights/events/trends` | S7 |
+| 15 | `GET /v1/insights/events/by-resource-type` | S7 |
+| 16 | `GET /v1/insights/events/by-facility` | S7 |
+| 17 | `GET /v1/insights/protocols/{id}/step-analytics` | S8 |
+| 18 | `GET /v1/insights/protocols/{id}/completion-funnel` | S8 |
+| 19 | `GET /v1/insights/protocols/{id}/outcome-distribution` | S8 |
+| 20 | `GET /v1/insights/protocols/{id}/enrollment-trends` | S8 |
+| 21 | `GET /v1/insights/deviations/by-action` | S9 |
+| 22 | `GET /v1/insights/deviations/resolution-rate` | S9 |
+| 23 | `GET /v1/insights/facilities/ranking` | S9 |
+| 24 | `GET /v1/insights/patients/at-risk-hotspots` | S10 |
+| 25 | `GET /v1/insights/patients/repeat-deviations` | S10 |
+| 26 | `GET /v1/insights/exports/compliance-report` | S11 |
+| 27 | `GET /v1/insights/ingestion/funnel` | S14 |
+| 28 | `GET /v1/insights/ingestion/rejections` | S14 |
+| 29 | `GET /v1/insights/ingestion/source-quality` | S14 |
+| 30 | `GET /v1/insights/ingestion/pipeline-loss` | S14 |
+| 31 | `GET /v1/insights/lookups/protocols` | S16 |
+| 32 | `GET /v1/insights/lookups/facilities` | S16 |
+| 33 | `GET /v1/insights/lookups/practitioners` | S16 |
+| 34 | `GET /v1/insights/lookups/sources` | S16 |
+| 35 | `GET /v1/insights/lookups/patients` | S16 |
 
 ---
 
@@ -575,7 +562,7 @@ S0 (Docs)
                                     └── S15 (Deployment & Containerization)
 ```
 
-**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14+S16 (parallelizable — 9 subtasks, 38 endpoints) → S11 → S12 → S13 → S15
+**Critical path:** S0 → S1 → S2 → S3 → S4–S10+S14+S16 (parallelizable — 9 subtasks, 33 endpoints) → S11 → S12 → S13 → S15
 
 **Story Points Summary:**
 
@@ -588,7 +575,7 @@ S0 (Docs)
 | S4 Compliance Summary | 5 | 3 |
 | S5 Patient Compliance | 5 | 5 |
 | S6 Deviations & Intelligence | 5 | 3 |
-| S7 Event Volume + Source Comparison | 5 | 8 |
+| S7 Event Volume | 5 | 5 |
 | S8 Protocol Analytics | 5 | 4 |
 | S9 Deviation Analytics + Facility Ranking | 5 | 3 |
 | S10 Processing Quality + Patient Risk | 5 | 3 |
@@ -606,7 +593,7 @@ S0 (Docs)
 
 ### GAP-01: `inbound_event_logs` MATERIALIZED columns expect CloudEvents format; collector service stores raw FHIR
 
-**Affected pages:** Practitioners Analytics (all zeros), Facilities Analytics (empty), Compliance Overview facility filter returns nothing, Events by-practitioner/by-facility (empty), Dashboard facility counts, facility display names not resolved
+**Affected pages:** Practitioners Analytics (all zeros), Facilities Analytics (empty), Compliance Overview facility filter returns nothing, Events by-facility (empty), Dashboard facility counts, facility display names not resolved
 
 **Root cause:**
 
